@@ -1,0 +1,8 @@
+UID:
+uid1,uid2,uid3,uid4
+UserID:
+admin,jrm,ppp,test
+Password:
+admin,jrm,ppp,test
+Type:
+admin,admin,admin,staff

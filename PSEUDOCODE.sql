@@ -57,7 +57,7 @@ FUNCTION inv_update():
                     CASE 2 THEN
                         IF quantity == 0 OR change_quantity > quantity THEN
                             DISPLAY "Insufficient for distribution!"
-                            CALL admin_menu()
+                            CALL FUNCTION admin_menu()
                         ELSE THEN
                             new_quantity = quantity - change_quantity
                         END IF 
@@ -93,9 +93,88 @@ FUNCTION inv_update():
         
         OPEN "transactions.txt" IN APPEND mode AS f
         WRITE "\n".join(trans_data)
-        PRINT Inventory updated: {items} ({item_name[selected - 1]}) = {new_quantity} Boxes
+        DISPLAY Inventory updated: {items} ({item_name[selected - 1]}) = {new_quantity} Boxes
         
-        CALL inv_update()
+        CALL FUNCTION inv_update()
+    END TRY
+
+FUNCTION login(username, passwd):
+    DEFINE user_name, user_password, user_type, lines, check_type AS STRING
+    TRY
+        OPEN "users.txt" IN READ mode AS f
+        lines = f.readlines()
+        
+        user_name = lines[1].strip().split(",")
+        user_password = lines[2].strip().split(",")
+        user_type = lines[3].strip().split(",")
+        
+        WHILE True THEN
+            IF username IN user_name AND passwd EQUAL TO user_password[user_name.index(username)]:
+                check_type = user_type[user_name.index(username)]
+                IF check_type IS "admin" THEN
+                    CALL FUNCTION admin_menu()
+                ELSE THEN
+                    CALL FUNCTION user_menu()
+                BREAK
+                END IF
+            ELSE IF username AND passwd IS EMPTY THEN
+                return
+            ELSE THEN
+                DISPLAY "Invalid credential. Please try again."
+                BREAK
+            END IF
+        END WHILE
+        
+        CALL FUNCTION init_inv()
+        
+    CATCH FileNotFound THEN
+        DISPLAY "The file was not found"
+    END TRY
+
+FUNCTION register():
+    DEFINE uid_list, username_list, password_list, type_list AS lists
+
+    DISPLAY "\tPlease enter register credentials\n\tUsername: "
+    GET username
+    DISPLAY "\tPassword: "
+    GET passwd
+    DISPLAY "\tAccount Type (admin/staff): "
+    GET usertype
+    
+    TRY
+        OPEN "users.txt" IN READ mode AS f
+        lines = f.readlines()
+        
+        user_id = lines[0].strip().split(",")
+        user_name = lines[1].strip().split(",")
+        user_password = lines[2].strip().split(",")
+        user_type = lines[3].strip().split(",")
+        
+        uid_list.extend(user_id)
+        username_list.extend(user_name)
+        password_list.extend(user_password)
+        type_list.extend(user_type)
+        
+        IF username IN user_name THEN
+            DISPLAY "Username already exists!"
+            CALL FUNCTION register()
+        END IF
+        
+        FOR EACH c AND last_id IN ENUMERATE uid_list AND number, STARTING FROM 1 THEN
+            last_id = number
+        END FOR
+
+        uid_list.append(f"uid{last_id + 1}")
+        username_list.append(username)
+        password_list.append(passwd)
+        type_list.append(usertype)
+        
+        CALL FUNCTION config_save("users.txt", "w", uid_list, username_list, password_list, type_list)
+        DISPLAY "> Registered"
+        CALL FUNCTION admin_menu()
+        
+    CATCH IOError or FileNotFoundError:
+        DISPLAY "An error occurred while accessing the file."
     END TRY
 
 

@@ -1,4 +1,4 @@
 uid1,uid2,uid3,uid4
-admin,jrm,jeremy,test
-admin,jrm,admin,test
-admin,admin,admin,staff
+admin,jrm,test,jeremy
+admin,jrm,test,0731
+admin,admin,staff,admin

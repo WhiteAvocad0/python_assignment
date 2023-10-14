@@ -1,71 +1,61 @@
-def test():
-    username, password = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
-    
-    with open("test.txt", "r") as f:
+def inv_update():
+    trans_data = []
+    menu_select,select_data = int(input("Please select an option:\n1. Receive\n2. Distribute\n3. Quit\n> ")), ["Receive","Distribute"]
+    with open("ppe.txt","r") as f:
         lines = f.readlines()
-    
-    with open("test.txt", "w") as f:
-        f.write(lines[0]+","+username+"\n"+lines[1]+"\n"+password)
-
-test()
-
-'''''
-def register():
-    uid_list = []
-    username,passwd,usertype = input("\tPlease enter register credential\n\tUsername: "),input("\tPassword: "),input("\tAccount Type (admin/staff): ").lower()    
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        user_name = lines[1].strip().split(",")
-        uid_list.extend(lines[0].strip().split(","))
-        #Check if username already exist
-        if username in user_name:
-            print("Username already exist!")
-            register()
-        #UID Generation
-        for c in enumerate(uid_list,1):
-            last_id = c
-        #Append User Data
-        uid_list.append(f"uid{last_id[0]+1}")
-        #Write Data
-        with open("users.txt","w") as f:
-            f.wirtelines(lines[0]+ "," + f"uid{last_id}")
-            f.wirtelines(lines[0]+ "," + username)
-            f.wirtelines(lines[0]+ "," + passwd)
-            f.wirtelines(lines[0]+ "," + usertype)
-        print("> Registered")
-        init_inv()
-'''''
-'''''
-#Add new user
-def register():
-    uid_list,username_list,password_list,type_list = [],[],[],[]
-    username,passwd,usertype = input("\tPlease enter register credential\n\tUsername: "),input("\tPassword: "),input("\tAccount Type (admin/staff): ").lower()    
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        #List check
-        user_id = lines[0].strip().split(",")
-        user_name = lines[1].strip().split(",")
-        user_password = lines[2].strip().split(",")
-        user_type = lines[3].strip().split(",")
-        #Append user data to new list
-        uid_list.extend(lines[0].strip().split(","))
-        username_list.extend(user_name)
-        password_list.extend(user_password)
-        type_list.extend(user_type)
-        #Check if username already exist
-        if username in user_name:
-            print("Username already exist!")
-            register()
-        #UID Generation
-        for c in enumerate(uid_list,1):
-            last_id = c
-        #Append User Data
-        uid_list.append(f"uid{last_id[0]+1}")
-        username_list.append(username)
-        password_list.append(passwd)
-        type_list.append(usertype)
-        #Write Data
-        config_save("users.txt","w",uid_list,username_list,password_list,type_list)
-        print("> Registered")
-        init_inv()
-'''''
+    #Print list of items and remains quantity
+    for c, (ele,line) in enumerate(zip(item_name,lines),1):
+        remain = line.strip().split(",")
+        print(f"{c}.{ele} - {remain[1]}Boxes")
+    while True:
+        selected,change_quantity = input("Please enter item code number> "), input("Quantity to change > ")
+        try:
+            selected = int(selected)
+            change_quantity = int(change_quantity)
+            break
+        except ValueError:
+            print("Please enter only number!")
+            continue
+    for number_line,line in enumerate(lines,1):
+        data = line.strip().split(",")
+        items,quantity = data[0].strip(),int(data[1].strip())
+        splr = data[2].strip()
+        #Loop through list to find the matched selection
+        if selected == number_line:
+            match menu_select:
+                case 1:
+                    new_quantity = quantity + change_quantity
+                    trans_line = (f"{select_data[menu_select-1]} | {items} | {splr} | {current_time} | +{change_quantity}\n")
+                case 2:
+                    if quantity == 0 or change_quantity > quantity:
+                        print("Insufficient for distribution!")
+                        menu()
+                    else:
+                        new_quantity = quantity - change_quantity
+                    #Print hospital list
+                    for c,ele in enumerate(hospital_list,1):
+                        print(f"{c}.{ele}")
+                    while True:
+                        to_hospital = input("Distribute to hospital > ")
+                        try:
+                            to_hospital = int(to_hospital)
+                        except ValueError:
+                            print("Please valid number!")
+                            continue
+                        break
+                    trans_line = (f"{select_data[menu_select-1]} | {items} | {hospital_list[to_hospital-1]} | {current_time} | -{change_quantity}\n") 
+                case 3:
+                    return
+                case _:
+                    print("Invalid selection! Please try again.")
+            #Append data        
+            lines[number_line - 1] = (f"{items},{new_quantity},{splr}\n")
+            trans_data.append(trans_line)
+    #Write data
+    with open("ppe.txt","w") as f:
+        f.writelines(lines)
+    with open("transactions.txt","a") as f:
+        f.writelines("\n".join(trans_data))
+        print(f"Inventory updated>  {items} ({item_name[selected-1]}) = {new_quantity} Boxes")
+    inv_update()
+        

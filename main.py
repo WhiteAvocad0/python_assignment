@@ -4,75 +4,83 @@ item_code,item_name, quantity = ["FS","GL","GW","HC","MS","SC"], ["Face Shield",
 hospital_list, supplier_list, supplier_name = ["H1","H2","H3","H4"], ["S1","S2","S3","S3","S4","S4"], ["SupplierA","SupplierB","SupplierC","SupplierD"]
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-#Inventory initiate
 def init_inv():
+    init_supplier()
+    data_list = assign_supplier()
     try:
         with open("ppe.txt","r") as f:
             if f.read() == "":
-                print("Inventory is empty. Initiating inventory...")
+                print("Inventory initiated")
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
-                        f.write(f"{item_code[i]},{quantity[i]},{supplier_list[i]},{supplier_name[i]}\n")
+                        f.write(f"{item_code[i]},{quantity[i]},{data_list[i]}\n")
+                login()
             else:
                 login()
     except FileNotFoundError:
         print("The file was not found.")
 
-#Inventory updates
 def inv_update():
-    list = []
+    list_data = []
     trans_data = []
     select_data = ["Receive","Distribute"]
-    menu_select = int(input("Please select an option:\n1. Receive\n2. Distribute\n3. Quit\n> "))
-    if menu_select == 3:
-        menu()
+    while True:
+        menu_select = input("Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\t\n> ")
+        if not menu_select:
+            menu()
+        try:
+            menu_select = int(menu_select)
+            break
+        except ValueError:
+            print("Please enter only numbers!")
+            continue
     with open("ppe.txt","r") as f:
         lines = f.readlines()
         for line in lines:
             data = line.strip().split(",")
-            list.append(data)
-        for c,ele in enumerate(list,1):
+            list_data.append(data)
+        for c,ele in enumerate(list_data,1):
             print(f"{c}. {item_name[item_code.index(ele[0])]} - {ele[1]} Boxes")
         selection = int(input("Please enter item code number > "))
-        quantity = int(input("Quantity to change > "))
-        for c,ele in enumerate(list,1):
+        quantity_to_change = int(input("Quantity to change > "))
+        for c,ele in enumerate(list_data,1):
             item = item_name[item_code.index(ele[0])]
             itemcode = ele[0]
             supplier = ele[2]
             if selection == c:
                 match menu_select:
-                        case 1:
-                            new_quantity = int(ele[1]) + quantity
-                            trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | +{quantity}\n")
-                        case 2:
-                            if int(ele[1]) == 0 or quantity > int(ele[1]):
-                                print("Insufficient for distribution")
-                                menu()
-                            else:
-                                new_quantity = int(ele[1]) - quantity
+                    case 1:
+                        new_quantity = int(ele[1]) + quantity_to_change
+                        trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | +{quantity_to_change}\n")
+                    case 2:
+                        if int(ele[1]) == 0 or quantity_to_change > int(ele[1]):
+                            print("Insufficient for distribution")
+                            menu()
+                        else:
+                            new_quantity = int(ele[1]) - quantity_to_change
                             for c,ele in enumerate(hospital_list,1):
                                 print(f"{c}.{ele}")
                             while True:
                                 to_hospital = input("Distribute to hospital > ")
                                 try:
                                     to_hospital = int(to_hospital)
+                                    break
                                 except ValueError:
                                     print("Please valid number!")
                                     continue
-                                break  
-                            trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[to_hospital-1]} | {current_time} | -{quantity}\n") 
-                        case _:
-                            print("Invalid selection. Please try again.")
+                        trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[to_hospital-1]} | {current_time} | -{quantity_to_change}\n") 
+                    case _:
+                        print("Invalid selection. Please try again.")
                 #Append data        
-                lines[c - 1] = (f"{itemcode},{new_quantity},{supplier}\n")
+                lines[selection - 1] = (f"{itemcode},{new_quantity},{supplier}\n")
                 trans_data.append(trans_line)
         #Write data
         with open("ppe.txt","w") as f:
             f.writelines(lines)
         with open("transactions.txt","a") as f:
             f.writelines("\n".join(trans_data))
-            print(f"Inventory updated>  {item} ({item_name[selection-1]}) = {new_quantity} Boxes")
-        inv_update() 
+            print(f"Inventory updated>  {item_name[selection-1]} = {new_quantity} Boxes")
+        inv_update()  
 
 def login():
     with open("users.txt","r") as f:
@@ -183,6 +191,7 @@ def inv_track():
                     print(f"\t{items} = {quantity}")
                 case 2:
                     if quantity < 25:
+                        print(quantity)
                         print(f"\t{items} = {quantity}")
                     else:
                         print("\tNo items are less than 25 Boxes !")
@@ -299,24 +308,23 @@ def menu():
         case 6:
             search_user("users.txt","r")
         case 7:
-            modify_user("users.txt","r")
+            modify_user()
         case 8:
-            return
+            quit()
         case _:
             print("Invalid selection! Please try again.")
             menu()
 
-def modify_user(fileName,mode):
+def modify_user():
     #USER DATA
     uid_list,username_list,password_list,type_list = [],[],[],[]
-    uid,username,password,type = 2,4,6,8
-    with open(fileName,mode) as f:
+    with open("users.txt","r") as f:
         lines = f.readlines()
         #Read user data from file
-        uid_data = lines[uid-1].strip().split(",")
-        username_data = lines[username-1].strip().split(",")
-        password_data = lines[password-1].strip().split(",")
-        type_data = lines[type-1].strip().split(",")
+        uid_data = lines[0].strip().split(",")
+        username_data = lines[1].strip().split(",")
+        password_data = lines[2].strip().split(",")
+        type_data = lines[3].strip().split(",")
         #Append user data to new list
         uid_list.extend(uid_data)
         username_list.extend(username_data)
@@ -326,7 +334,9 @@ def modify_user(fileName,mode):
         for c,ele in enumerate(username_data,1):
             print(f"{c}. {ele}")
         while True:
-            selection = int(input("Please select an user to modify (Enter 0 to quit)\n> "))
+            selection = input("Please select an user to modify (Leave empty to quit)\n> ")
+            if not selection:
+                menu()
             try:
                 selection = int(selection)
                 break
@@ -340,8 +350,13 @@ def modify_user(fileName,mode):
             modify_item = int(input("\tPlease select an item to modify\n\t1. Username\n\t2. Password\n\t3. User Type\n\t4. Back\n> ")) 
             match modify_item:
                 case 1:
-                    new_username = input(f"Please enter a new username\nCurrent username: {username_data[selection-1]}\nNew username: ")
-                    username_list[selection-1] = new_username
+                    while True:
+                        new_username = input(f"Please enter a new username\nCurrent username: {username_data[selection-1]}\nNew username: ")
+                        if new_username in username_list:
+                            print("Username already exists. Please choose a different one.")
+                        else:
+                            username_list[selection-1] = new_username
+                            break
                 case 2:
                     new_password = input(f"Please enter a new password\nCurrent password: {password_data[selection-1]}\nNew password: ")
                     password_list[selection-1] = new_password
@@ -354,10 +369,10 @@ def modify_user(fileName,mode):
                             new_type = "staff"
                     type_list[selection-1] = new_type
                 case 4:
-                    modify_user("users.txt","r")
+                    modify_user()
                 case _:
                     print("Invalid selection! Please try again.")
-                    modify_user("users.txt","r")
+                    modify_user()
             #Write new data into users.txt
             config_save("users.txt","w",uid_list,username_list,password_list,type_list)
             print("---------------------Done---------------------")       
@@ -386,6 +401,59 @@ def user_menu():
         case _:
             print("Invalid selection! Please try again.")
             menu()     
+
+def assign_supplier():
+    data_list = []
+    with open("suppliers.txt", "r") as f:
+        lines = f.readlines()
+        if len(lines) != 0:
+            with open("ppe.txt","r") as f:
+                ppelines = f.readlines()
+                if len(ppelines) == 0:
+                    splist = lines[0].strip().split(",")
+                    spname = lines[1].strip().split(",")
+                    supplier_counts = [0] * len(spname)
+                    #data will become > [0,0,0,0]
+                    for i in range(6):
+                        while True:
+                            for c, ele in enumerate(spname, 1):
+                                print(f"{c}. {ele}")
+                            try:
+                                supplier_selection = int(input(f"Please select a supplier to supply {item_name[i]} > "))
+                                if 1 <= supplier_selection <= len(spname):
+                                    if supplier_counts[supplier_selection - 1] < 2:
+                                        #data will become [1,0,0,0] when 1 is selected
+                                        data_list.append(splist[supplier_selection - 1])
+                                        supplier_counts[supplier_selection - 1] += 1
+                                        break
+                                    else:
+                                        print(f"{spname[supplier_selection - 1]} has already supplied two items. Please select another supplier.")
+                                else:
+                                    print("Invalid supplier number. Please enter a valid number.")
+                            except ValueError:
+                                print("Please enter a valid number.")
+        else:
+            print("Suppliers assigned")
+    return data_list
+
+def init_supplier():
+    supplier_data = []
+    supplier_code = []
+    with open("suppliers.txt","r") as f:
+        lines = f.readlines()
+        if len(lines) == 0:
+            print("Setup wizard\nRequire at least four suppliers! (Not changable)")
+            while len(supplier_data) < 4:
+                supplier_name = input(f"Please enter supplier {len(supplier_data) + 1} name > ")
+                supplier_data.append(supplier_name)
+                sp_code = (f"S{len(supplier_data)}")
+                supplier_code.append(sp_code)
+            #Assign items to supplier
+            with open("suppliers.txt",'w') as f:
+                f.write(",".join(supplier_code)+"\n")
+                f.write(",".join(supplier_data)+"\n")
+        else:
+            return
 
 def config_save(fileName,mode,uid_list,username_list,password_list,type_list):
     with open(fileName,mode) as f:

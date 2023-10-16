@@ -4,6 +4,7 @@ item_code,item_name, quantity = ["FS","GL","GW","HC","MS","SC"], ["Face Shield",
 hospital_list, supplier_list, supplier_name = ["H1","H2","H3","H4"], ["S1","S2","S3","S3","S4","S4"], ["SupplierA","SupplierB","SupplierC","SupplierD"]
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+#Check ppe.txt and suppliers.txt
 def init_inv():
     try:
         with open("ppe.txt","r") as f:
@@ -14,16 +15,15 @@ def init_inv():
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
                         f.write(f"{item_code[i]},{quantity[i]},{data_list[i]}\n")
-                login()
+                utype = login()
+                menu(utype)
             else:
                 utype = login()
-                if utype == "admin":
-                    menu()
-                else:
-                    user_menu()
+                menu(utype)
     except FileNotFoundError:
         print("The file was not found.")
 
+#Update inventory
 def inv_update():
     list_data = []
     trans_data = []
@@ -86,6 +86,7 @@ def inv_update():
             print(f"Inventory updated>  {item_name[selection-1]} = {new_quantity} Boxes")
         inv_update()  
 
+#Login menu
 def login():
     with open("users.txt","r") as f:
         lines = f.readlines()
@@ -108,35 +109,27 @@ def login():
 
 #Add new user
 def register():
-    uid_list,username_list,password_list,type_list = [],[],[],[]
-    username,passwd,usertype = input("\tPlease enter register credential\n\tUsername: "),input("\tPassword: "),input("\tAccount Type (admin/staff): ").lower()    
+    data_list = []
     with open("users.txt","r") as f:
         lines = f.readlines()
-        #List check
-        user_id = lines[0].strip().split(",")
-        user_name = lines[1].strip().split(",")
-        user_password = lines[2].strip().split(",")
-        user_type = lines[3].strip().split(",")
-        #Append user data to new list
-        uid_list.extend(user_id)
-        username_list.extend(user_name)
-        password_list.extend(user_password)
-        type_list.extend(user_type)
+        for line in lines:
+            data_list.append(line.strip().split(","))
+        #UID Generation
+        for c in enumerate(data_list[0],1):
+            last_id = c
+        username = input("\tPlease enter register credential\n\tUsername: ")
         #Check if username already exist
-        if username in user_name:
+        if username in data_list[1]:
             print("Username already exist!")
             register()
-        #UID Generation
-        for c in enumerate(uid_list,1):
-            last_id = c
         #Append User Data
-        uid_list.append(f"uid{last_id[0]+1}")
-        username_list.append(username)
-        password_list.append(passwd)
-        type_list.append(usertype)
+        data_list[0].append(f"uid{last_id[0]+1}")
+        data_list[1].append(username)
+        data_list[2].append(input("\tPassword: "))
+        data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
         #Write Data
-        config_save("users.txt","w",uid_list,username_list,password_list,type_list)
-        print("> Registered")
+        config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
+        print("> New user added\nReturning to menu...")
         return
 
 #Inventory tracking
@@ -203,15 +196,14 @@ def inv_track():
 
 #Delete user
 def delete_user():
+    data_list = []
     with open("users.txt","r") as f:
         lines = f.readlines()
         #List check
-        uid_data = lines[0].strip().split(",")
-        username_data = lines[1].strip().split(",")
-        password_data = lines[2].strip().split(",")
-        type_data = lines[3].strip().split(",")
+        for line in lines:
+            data_list.append(line.strip().split(","))
         #Print username list
-        for c,ele in enumerate(username_data,1):
+        for c,ele in enumerate(data_list[1],1):
             print(f"{c}. {ele}")
         while True:
             selection = (input("Select the user you want to remove (Leave empty to quit) > "))
@@ -224,13 +216,13 @@ def delete_user():
                 print("Please enter only number!")
                 continue
         #Remove selected data from users.txt
-        uid_data.pop()
-        username_data.pop(username_data.index(username_data[selection-1]))
-        password_data.pop(selection-1)
-        type_data.pop(selection-1)
-        config_save("users.txt","w",uid_data,username_data,password_data,type_data)
+        data_list[0].pop()
+        for i in range(3):
+            data_list[i+1].pop(selection-1)
+        config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
     delete_user()
 
+#Search user
 def search_user(fileName,mode):
     with open(fileName,mode) as f:
         lines = f.readlines()
@@ -283,39 +275,7 @@ def search():
                     print("Invalid selection! Please try again.")
         search()
 
-#Admin menu
-def menu():
-    print(f"\tINVENTORY MANAGEMENT SYSTEM (Admin)\n\t{'+'*34}")
-    while True:
-        select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Logout\n> ")
-        try:
-            #Check if user entered anythings other than number
-            select = int(select)
-        except ValueError:
-            print("Please enter only number!")
-            continue
-        #Check menu selection
-        match select:
-            case 1:
-                inv_update()
-            case 2:
-                inv_track()
-            case 3:
-                search()
-            case 4:
-                register()
-            case 5:
-                delete_user()
-            case 6:
-                search_user("users.txt","r")
-            case 7:
-                modify_user()
-            case 8:
-                quit()
-            case _:
-                print("Invalid selection! Please try again.")
-                return
-
+#Modify user
 def modify_user():
     #USER DATA
     uid_list,username_list,password_list,type_list = [],[],[],[]
@@ -373,10 +333,42 @@ def modify_user():
                     modify_user()
             #Write new data into users.txt
             config_save("users.txt","w",uid_list,username_list,password_list,type_list)
-            print("---------------------Done---------------------")       
+            print("---------------------Done---------------------")    
 
-def user_menu():
-    print("\n\tINVENTORY MANAGEMENT SYSTEM (User)\n\t++++++++++++++++++++++++++++++++++") 
+#Admin menu
+def menu(user_type):
+    if user_type == "admin":
+        print(f"\tINVENTORY MANAGEMENT SYSTEM (Admin)\n\t{'+'*34}")
+        while True:
+            select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Logout\n> ")
+            try:
+                #Check if user entered anythings other than number
+                select = int(select)
+            except ValueError:
+                print("Please enter only number!")
+                continue
+            #Check menu selection
+            match select:
+                case 1:
+                    inv_update()
+                case 2:
+                    inv_track()
+                case 3:
+                    search()
+                case 4:
+                    register()
+                case 5:
+                    delete_user()
+                case 6:
+                    search_user("users.txt","r")
+                case 7:
+                    modify_user()
+                case 8:
+                    quit()
+                case _:
+                    print("Invalid selection! Please try again.") 
+    else:
+         print("\n\tINVENTORY MANAGEMENT SYSTEM (User)\n\t++++++++++++++++++++++++++++++++++") 
     while True:
         select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Logout\n> ")
         try:
@@ -397,7 +389,6 @@ def user_menu():
                 quit()
             case _:
                 print("Invalid selection! Please try again.")
-                return     
 
 def assign_supplier():
     data_list = []

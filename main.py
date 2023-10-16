@@ -5,18 +5,22 @@ hospital_list, supplier_list, supplier_name = ["H1","H2","H3","H4"], ["S1","S2",
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def init_inv():
-    init_supplier()
-    data_list = assign_supplier()
     try:
         with open("ppe.txt","r") as f:
             if f.read() == "":
+                init_supplier()
+                data_list = assign_supplier()
                 print("Inventory initiated")
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
                         f.write(f"{item_code[i]},{quantity[i]},{data_list[i]}\n")
                 login()
             else:
-                login()
+                utype = login()
+                if utype == "admin":
+                    menu()
+                else:
+                    user_menu()
     except FileNotFoundError:
         print("The file was not found.")
 
@@ -27,7 +31,7 @@ def inv_update():
     while True:
         menu_select = input("Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\t\n> ")
         if not menu_select:
-            menu()
+            return
         try:
             menu_select = int(menu_select)
             break
@@ -55,7 +59,7 @@ def inv_update():
                     case 2:
                         if int(ele[1]) == 0 or quantity_to_change > int(ele[1]):
                             print("Insufficient for distribution")
-                            menu()
+                            inv_update()
                         else:
                             new_quantity = int(ele[1]) - quantity_to_change
                             for c,ele in enumerate(hospital_list,1):
@@ -94,17 +98,13 @@ def login():
             username,passwd = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
             if username in user_name and passwd == user_password[user_name.index(username)]:
                 check_type = (user_type[user_name.index(username)])
-                if check_type == "admin":
-                    menu()
-                else:
-                    user_menu()
-                break
+                return check_type
             elif username == "" and passwd == "":
                 quit()
             else:
                 print("Invalid credential. Please try again.")
                 break
-        init_inv()
+    init_inv()
 
 #Add new user
 def register():
@@ -137,7 +137,7 @@ def register():
         #Write Data
         config_save("users.txt","w",uid_list,username_list,password_list,type_list)
         print("> Registered")
-        menu()
+        return
 
 #Inventory tracking
 def inv_track():
@@ -177,7 +177,7 @@ def inv_track():
                     print(transactions_list[transaction-1])
                 inv_track()
         case 5:
-            menu()
+            return
         case _:
             print("Invalid selection! Please try again.")
             inv_track()
@@ -202,8 +202,8 @@ def inv_track():
         inv_track()
 
 #Delete user
-def delete_user(fileName,mode):
-    with open(fileName,mode) as f:
+def delete_user():
+    with open("users.txt","r") as f:
         lines = f.readlines()
         #List check
         uid_data = lines[0].strip().split(",")
@@ -214,7 +214,9 @@ def delete_user(fileName,mode):
         for c,ele in enumerate(username_data,1):
             print(f"{c}. {ele}")
         while True:
-            selection = (input("Select the user you want to remove> "))
+            selection = (input("Select the user you want to remove (Leave empty to quit) > "))
+            if not selection:
+                return
             try:
                 selection = int(selection)
                 break
@@ -227,7 +229,7 @@ def delete_user(fileName,mode):
         password_data.pop(selection-1)
         type_data.pop(selection-1)
         config_save("users.txt","w",uid_data,username_data,password_data,type_data)
-    init_inv()
+    delete_user()
 
 def search_user(fileName,mode):
     with open(fileName,mode) as f:
@@ -276,7 +278,7 @@ def search():
                 case 3:
                     print(data)
                 case 4:
-                    menu()
+                    return
                 case _:
                     print("Invalid selection! Please try again.")
         search()
@@ -289,31 +291,30 @@ def menu():
         try:
             #Check if user entered anythings other than number
             select = int(select)
-            break
         except ValueError:
             print("Please enter only number!")
             continue
-    #Check menu selection
-    match select:
-        case 1:
-            inv_update()
-        case 2:
-            inv_track()
-        case 3:
-            search()
-        case 4:
-            register()
-        case 5:
-            delete_user("users.txt","r")
-        case 6:
-            search_user("users.txt","r")
-        case 7:
-            modify_user()
-        case 8:
-            quit()
-        case _:
-            print("Invalid selection! Please try again.")
-            menu()
+        #Check menu selection
+        match select:
+            case 1:
+                inv_update()
+            case 2:
+                inv_track()
+            case 3:
+                search()
+            case 4:
+                register()
+            case 5:
+                delete_user()
+            case 6:
+                search_user("users.txt","r")
+            case 7:
+                modify_user()
+            case 8:
+                quit()
+            case _:
+                print("Invalid selection! Please try again.")
+                return
 
 def modify_user():
     #USER DATA
@@ -336,16 +337,13 @@ def modify_user():
         while True:
             selection = input("Please select an user to modify (Leave empty to quit)\n> ")
             if not selection:
-                menu()
+                return
             try:
                 selection = int(selection)
                 break
             except ValueError:
                 print("Please enter only number!")
                 continue
-        match selection:
-            case 0:
-                menu()
         while True:
             modify_item = int(input("\tPlease select an item to modify\n\t1. Username\n\t2. Password\n\t3. User Type\n\t4. Back\n> ")) 
             match modify_item:
@@ -384,23 +382,22 @@ def user_menu():
         try:
             #Check if user entered anythings other than number
             select = int(select)
-            break
         except ValueError:
             print("Please enter only number!")
             continue
-    #Check menu selection
-    match select:
-        case 1:
-            inv_update()
-        case 2:
-            inv_track()
-        case 3:
-            search()
-        case 4:
-            return
-        case _:
-            print("Invalid selection! Please try again.")
-            menu()     
+        #Check menu selection
+        match select:
+            case 1:
+                inv_update()
+            case 2:
+                inv_track()
+            case 3:
+                search()
+            case 4:
+                quit()
+            case _:
+                print("Invalid selection! Please try again.")
+                return     
 
 def assign_supplier():
     data_list = []
@@ -454,7 +451,7 @@ def init_supplier():
                 f.write(",".join(supplier_data)+"\n")
         else:
             return
-
+        
 def config_save(fileName,mode,uid_list,username_list,password_list,type_list):
     with open(fileName,mode) as f:
         f.write(",".join(uid_list)+"\n")

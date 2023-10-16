@@ -135,7 +135,9 @@ def register():
 #Inventory tracking
 def inv_track():
     while True:
-        selection = (input(f"{'-'*66}\n\tPlease select and option:\n\t1. Check all items quantity\n\t2. Item less than 25 boxes\n\t3. Check specific item\n\t4. Item received during specific time\n\t5. Back\n> "))
+        selection = (input(f"{'-'*66}\n\tPlease select and option (Leave empty to exit) :\n\t1. Check all items quantity\n\t2. Item less than 25 boxes\n\t3. Check specific item\n\t4. Item received during specific time\n\tn> "))
+        if not selection:
+            return
         try:
             selection = int(selection)
             break
@@ -231,7 +233,9 @@ def search_user(fileName,mode):
     for c,ele in enumerate(username_data,1):
         print(f"{c}. {ele}")
     while True:
-        selection = int(input("Please select an user to search (Enter 0 to quit)\n> "))
+        selection = int(input("Please select an user to search (Leave empty to quit)\n> "))
+        if not selection:
+            return
         try:
             selection = int(selection)
             break
@@ -277,22 +281,14 @@ def search():
 
 #Modify user
 def modify_user():
+    data_list = []
     #USER DATA
-    uid_list,username_list,password_list,type_list = [],[],[],[]
     with open("users.txt","r") as f:
         lines = f.readlines()
-        #Read user data from file
-        uid_data = lines[0].strip().split(",")
-        username_data = lines[1].strip().split(",")
-        password_data = lines[2].strip().split(",")
-        type_data = lines[3].strip().split(",")
-        #Append user data to new list
-        uid_list.extend(uid_data)
-        username_list.extend(username_data)
-        password_list.extend(password_data)
-        type_list.extend(type_data)
+        for line in lines:
+            data_list.append(line.strip().split(","))
         #Print username list
-        for c,ele in enumerate(username_data,1):
+        for c,ele in enumerate(data_list[1],1):
             print(f"{c}. {ele}")
         while True:
             selection = input("Please select an user to modify (Leave empty to quit)\n> ")
@@ -305,34 +301,34 @@ def modify_user():
                 print("Please enter only number!")
                 continue
         while True:
-            modify_item = int(input("\tPlease select an item to modify\n\t1. Username\n\t2. Password\n\t3. User Type\n\t4. Back\n> ")) 
+            modify_item = int(input("\tPlease select an item to modify (Leave empty to quit)\n\t1. Username\n\t2. Password\n\t3. User Type\t\n> ")) 
+            if not modify_item:
+                return
             match modify_item:
                 case 1:
                     while True:
-                        new_username = input(f"Please enter a new username\nCurrent username: {username_data[selection-1]}\nNew username: ")
-                        if new_username in username_list:
+                        new_username = input(f"Please enter a new username\nCurrent username: {data_list[1][selection-1]}\nNew username: ")
+                        if new_username in data_list[1]:
                             print("Username already exists. Please choose a different one.")
                         else:
-                            username_list[selection-1] = new_username
+                            data_list[1][selection-1] = new_username
                             break
                 case 2:
-                    new_password = input(f"Please enter a new password\nCurrent password: {password_data[selection-1]}\nNew password: ")
-                    password_list[selection-1] = new_password
+                    new_password = input(f"Please enter a new password\nCurrent password: {data_list[2][selection-1]}\nNew password: ")
+                    data_list[2][selection-1] = new_password
                 case 3:
-                    new_type = int(input(f"Please enter a new user type\nCurrent user type: {type_data[selection-1]}\nNew user type (1. Admin/2. Staff): "))
+                    new_type = int(input(f"Please enter a new user type\nCurrent user type: {data_list[3][selection-1]}\nNew user type (1. Admin/2. Staff): "))
                     match new_type:
                         case 1:
                             new_type = "admin"
                         case 2:
                             new_type = "staff"
-                    type_list[selection-1] = new_type
-                case 4:
-                    modify_user()
+                    data_list[3][selection-1] = new_type
                 case _:
                     print("Invalid selection! Please try again.")
                     modify_user()
             #Write new data into users.txt
-            config_save("users.txt","w",uid_list,username_list,password_list,type_list)
+            config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
             print("---------------------Done---------------------")    
 
 #Admin menu

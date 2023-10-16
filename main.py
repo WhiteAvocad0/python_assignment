@@ -1,11 +1,8 @@
-import datetime
-
-item_code,item_name, quantity = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"], [100,100,100,100,100,100]
-hospital_list, supplier_list, supplier_name = ["H1","H2","H3","H4"], ["S1","S2","S3","S3","S4","S4"], ["SupplierA","SupplierB","SupplierC","SupplierD"]
-current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+from datetime import datetime
 
 #Check ppe.txt and suppliers.txt
 def init_inv():
+    item_code = ["FS","GL","GW","HC","MS","SC"]
     try:
         with open("ppe.txt","r") as f:
             if f.read() == "":
@@ -14,7 +11,7 @@ def init_inv():
                 print("Inventory initiated")
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
-                        f.write(f"{item_code[i]},{quantity[i]},{data_list[i]}\n")
+                        f.write(f"{item_code[i]},{100},{data_list[i]}\n")
                 utype = login()
                 menu(utype)
             else:
@@ -25,11 +22,13 @@ def init_inv():
 
 #Update inventory
 def inv_update():
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
+    hospital_list = ["H1","H2","H3","H4"]
     list_data = []
     trans_data = []
-    select_data = ["Receive","Distribute"]
     while True:
-        menu_select = input("Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\t\n> ")
+        menu_select, select_data = input("Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\t\n> "), ["Receive","Distribute"]
         if not menu_select:
             return
         try:
@@ -134,6 +133,7 @@ def register():
 
 #Inventory tracking
 def inv_track():
+    item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     while True:
         selection = (input(f"{'-'*66}\n\tPlease select and option (Leave empty to exit) :\n\t1. Check all items quantity\n\t2. Item less than 25 boxes\n\t3. Check specific item\n\t4. Item received during specific time\n\tn> "))
         if not selection:
@@ -420,6 +420,7 @@ def menu(user_type):
 
 #assign supplier
 def assign_supplier():
+    item_name = ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     data_list = []
     with open("suppliers.txt", "r") as f:
         lines = f.readlines()

@@ -88,17 +88,17 @@ def inv_update():
 
 #Login menu
 def login():
+    data_list = []
     with open("users.txt","r") as f:
         lines = f.readlines()
         #List check
-        user_name = lines[1].strip().split(",")
-        user_password = lines[2].strip().split(",")
-        user_type = lines[3].strip().split(",")
+        for line in lines:
+            data_list.append(line.strip().split(","))
         #Check if username match password
         while True:
             username,passwd = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
-            if username in user_name and passwd == user_password[user_name.index(username)]:
-                check_type = (user_type[user_name.index(username)])
+            if username in data_list[1] and passwd == data_list[2][data_list[1].index(username)]:
+                check_type = (data_list[3][data_list[1].index(username)])
                 return check_type
             elif username == "" and passwd == "":
                 quit()
@@ -390,6 +390,7 @@ def menu(user_type):
             case _:
                 print("Invalid selection! Please try again.")
 
+#assign supplier
 def assign_supplier():
     data_list = []
     with open("suppliers.txt", "r") as f:
@@ -424,6 +425,7 @@ def assign_supplier():
             print("Suppliers assigned")
     return data_list
 
+#setup supplier.txt
 def init_supplier():
     supplier_data = []
     supplier_code = []
@@ -442,7 +444,8 @@ def init_supplier():
                 f.write(",".join(supplier_data)+"\n")
         else:
             return
-        
+
+#save config for ppe.txt    
 def config_save(fileName,mode,uid_list,username_list,password_list,type_list):
     with open(fileName,mode) as f:
         f.write(",".join(uid_list)+"\n")

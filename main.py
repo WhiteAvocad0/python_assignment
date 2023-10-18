@@ -1,4 +1,6 @@
-from datetime import datetime
+import datetime
+
+current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 #Check ppe.txt and suppliers.txt
 def init_inv():
@@ -22,7 +24,6 @@ def init_inv():
 
 #Update inventory
 def inv_update():
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     hospital_list = ["H1","H2","H3","H4"]
     list_data = []
@@ -127,7 +128,7 @@ def register():
         data_list[2].append(input("\tPassword: "))
         data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
         #Write Data
-        config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
+        config_save("users.txt","w",data_list)
         print("> New user added\nReturning to menu...")
         return
 
@@ -221,7 +222,7 @@ def delete_user():
         data_list[0].pop()
         for i in range(3):
             data_list[i+1].pop(selection-1)
-        config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
+        config_save("users.txt","w",data_list)
     delete_user()
 
 #Search user
@@ -357,7 +358,7 @@ def modify_user():
                             print("Invalid selection! Please try again.")
                             modify_user()
                     #Write new data into users.txt
-                    config_save("users.txt","w",data_list[0],data_list[1],data_list[2],data_list[3])
+                    config_save("users.txt","w",data_list)
                     print("---------------------Done---------------------")
             except ValueError:
                 print("Please enter only number!")
@@ -392,7 +393,7 @@ def menu(user_type):
                 case 7:
                     modify_user()
                 case 8:
-                    quit()
+                    backup()
                 case _:
                     print("Invalid selection! Please try again.") 
     else:
@@ -475,11 +476,21 @@ def init_supplier():
             return
 
 #save config for ppe.txt    
-def config_save(fileName,mode,uid_list,username_list,password_list,type_list):
+def config_save(fileName,mode,data_list):
     with open(fileName,mode) as f:
-        f.write(",".join(uid_list)+"\n")
-        f.write(",".join(username_list)+"\n")
-        f.write(",".join(password_list)+"\n")
-        f.write(",".join(type_list)+"\n")
+        for data in data_list:
+            f.write(",".join(data) + "\n")
+
+def backup():
+    data_list,files, = [],["ppe.txt","users.txt"]
+    for file in files:
+        with open(file,"r") as f:
+            lines = f.readlines()
+            for line in lines:
+                data_list.append(line.strip().split(","))
+        with open("backup.txt","w") as f:
+            for i in data_list:
+                f.write(",".join(i) + "\n")
+    quit()
 
 init_inv()

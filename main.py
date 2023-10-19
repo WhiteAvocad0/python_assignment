@@ -567,6 +567,4 @@ def backup():
                 f.write(",".join(i) + "\n")
     quit()
 
-
-
 init_inv()

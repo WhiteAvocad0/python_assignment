@@ -25,7 +25,7 @@ END FUNCTION
 FUNCTION inv_update()
     DEFINE current_time AS DATE AND TIME WITH FORMAT "YYYY-MM-DD HH:MM:SS"
     DEFINE item_code, item_name AS lists ["FS", "GL", "GW", "HC", "MS", "SC"], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
-    DEFINE hospital_list AS a list ["H1", "H2", "H3", "H4"]
+    DEFINE hospital_list AS a list []
     DEFINE select_data AS ["Receive","Distribute"]
     DEFINE list_data, trans_data AS lists
     DEFINE menu_select AS INTEGER
@@ -44,8 +44,11 @@ FUNCTION inv_update()
         END TRY
     END WHILE
         
-    WITH OPEN "ppe.txt" IN READ mode AS f THEN
+    WITH OPEN "ppe.txt" AND "hospitals.txt"IN READ mode AS f AND hf THEN
+        hlines = hf.readlines()
         lines = f.readlines()
+        FOR line IN lines THEN
+            APPEND line.strip().split(",") TO hospital_list
         FOR line IN lines THEN
             data = line.strip().split(",")
             APPEND data to list_data
@@ -76,7 +79,7 @@ FUNCTION inv_update()
                             CALL FUNCTION inv_update()
                         ELSE:
                             new_quantity = CONVERT TO INTEGER ele[1] - quantity_to_change
-                            FOR c AND ele IN ENUMERATE hospital_list AND 1 THEN
+                            FOR c AND ele IN ENUMERATE hospital_list[0] AND 1 THEN
                                 DISPLAY {c}.{ele}
                             END FOR
                             WHILE TRUE:
@@ -89,7 +92,7 @@ FUNCTION inv_update()
                                     DISPLAY "Please enter a valid number!"
                                     CONTINUE
                             END WHILE
-                            trans_line = {select_data[menu_select-1]} | {item} | {hospital_list[to_hospital-1]} | {current_time} | -{quantity_to_change}\n
+                            trans_line = {select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | -{quantity_to_change}\n
                     CASE _:
                         DISPLAY "Invalid selection. Please try again."
                 END MATCH
@@ -669,10 +672,106 @@ FUNCTION init_supplier()
         END IF
 END FUNCTION
 
+FUNCTION update_hospital():
+    data_list = []
+    DEFINE selection, select, delete, new_name, new_hospital_name AS INTEGER
+    WITH OPEN "hospitals.txt" IN READ mode AS f THEN
+        lines = f.readlines()
+        FOR EACH line IN lines:
+            # Append hospital data after splitting by comma
+            APPEND line.strip().split(",") TO data_list
+
+    WHILE TRUE:
+        
+        DISPLAY "\tPlease select an option (Leave empty to quit):\n"
+        DISPLAY "\t1. Add hospital\n"
+        DISPLAY "\t2. Change hospital name\n"
+        DISPLAY "\t3. Delete hospital\n"
+        DISPLAY "Select an option > "
+        GET selection
+        IF selection IS EMPTY THEN
+            RETURN
+        TRY
+            IS selection INTEGER? THEN
+            DISPLAY "Please enter only numbers!"
+            CONTINUE 
+        END IF
+
+        MATCH selection THEN
+            CASE 1 THEN
+                # Add a new hospital
+                DISPLAY "Please enter the new hospital name: "
+                GET new_hospital_name
+                data_list[1].APPEND(new_hospital_name)
+                data_list[0].APPEND(H + LENGTH OF data_list[0] + 1)
+
+            CASE 2 THEN
+                FOR EACH c, ele IN ENUMERATE data_list[0], 1:
+                    DISPLAY f"{c}. {ele}"  # Display the hospital codes
+                WHILE TRUE:
+                    DISPLAY "Please select a hospital to update name > "
+                    GET select
+                    TRY
+                        select = CONVERT TO INTEGER select
+                        BREAK
+                    EXCEPT ValueError THEN
+                        DISPLAY "Please enter only numbers!" 
+                        CONTINUE
+                    DISPLAY "Please enter the new name: "
+                    GET new_name
+                    data_list[1][select - 1] = new_name
+                END WHILE
+                END FOR 
+
+            CASE 3 THEN
+                IF LENGTH OF data_list index 0 IS 3 THEN
+                    DISPLAY "There must be a minimum of 3 hospitals in the system. Unable to delete."
+                ELSE:
+                    FOR EACH c, ele IN ENUMERATE data_list[1], 1:
+                        DISPLAY {c}. {ele}
+                    WHILE TRUE THEN
+                        DISPLAY "Please select a hospital to delete > "
+                        GET delete
+                        TRY
+                            IS delete INTEGER? THEN
+                            BREAK
+                        EXCEPT ValueError THEN
+                            DISPLAY "Please enter only numbers!" 
+                            CONTINUE
+                    END WHILE
+                    END FOR
+                    data_list[1].POP(delete - 1)
+                    data_list[0].POP()
+                END IF
+            CASE NONE THEN
+                DISPLAY "Please select a valid option"
+
+        config_save("hospitals.txt", "w", data_list)
+END FUNCTION
+
 FUNCTION config_save(fileName,mode,data_list)
     FOR data in data_list THEN
         WRITE ",".JOIN(data) + "\n"
-# Initiate inventory
-CALL FUNCTION init_inv()
 
+FUNCTION backup()
+    DEFINE data_list AS list 
+    DEFINE files AS list ["ppe.txt", "users.txt"]
+
+    FOR EACH file IN files THEN
+        WITH OPEN file IN READ mode AS f:
+            lines = f.readlines()
+            FOR EACH line IN lines THEN
+                APPEND line.strip().split(",") TO data_list
+            END FOR
+    END FOR
+
+        WITH OPEN "backup.txt" IN WRITE mode AS f THEN
+            FOR EACH i IN data_list THEN
+                f.write ",".join(i) + "\n"
+            END FOR
+
+    QUIT()
+END FUNCTION    
+
+CALL FUNCTION init_inv()
 

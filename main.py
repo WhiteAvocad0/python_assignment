@@ -26,7 +26,7 @@ def init_inv():
 #Update inventory
 def inv_update():
     item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
-    hospital_list = ["H1","H2","H3","H4"]
+    hospital_list = []
     list_data = []
     trans_data = []
     while True:
@@ -39,8 +39,11 @@ def inv_update():
         except ValueError:
             print("Please enter only numbers!")
             continue
-    with open("ppe.txt","r") as f:
+    with open("ppe.txt","r") as f, open("hospitals.txt","r") as hf:
         lines = f.readlines()
+        hlines = hf.readlines()
+        for line in hlines:
+            hospital_list.append(line.strip().split(","))
         for line in lines:
             data = line.strip().split(",")
             list_data.append(data)
@@ -63,7 +66,7 @@ def inv_update():
                             inv_update()
                         else:
                             new_quantity = int(ele[1]) - quantity_to_change
-                            for c,ele in enumerate(hospital_list,1):
+                            for c,ele in enumerate(hospital_list[0],1):
                                 print(f"{c}.{ele}")
                             while True:
                                 to_hospital = input("Distribute to hospital > ")
@@ -73,7 +76,7 @@ def inv_update():
                                 except ValueError:
                                     print("Please valid number!")
                                     continue
-                        trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[to_hospital-1]} | {current_time} | -{quantity_to_change}\n") 
+                        trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | -{quantity_to_change}\n") 
                     case _:
                         print("Invalid selection. Please try again.")
                 #Append data        
@@ -487,7 +490,7 @@ def init_hospital():
         if len(lines) == 0:
                 for i in range(3):
                     name_list.append(input(f"There should be minimum of three hospital (Current: 0)\nPlease enter hospital {i+1} name: "))
-                    code_list.append(f"S{len(name_list)}")
+                    code_list.append(f"H{len(name_list)}")
                     with open("hospitals.txt","w") as f:
                         f.write(",".join(code_list) + "\n")
                         f.write(",".join(name_list))
@@ -511,28 +514,39 @@ def update_hospital():
             match selection:
                 case 1:
                     data_list[1].append(input("Please enter new hospital name: "))
-                    data_list[0].append(f"S{len(data_list[0])+1}")
+                    data_list[0].append(f"H{len(data_list[0])+1}")
                 case 2:
                     for c,ele in enumerate(data_list[0],1):
                         print(f"{c}. {ele}")
-                    select = int(input("Please select a hospital to update name > "))
-                    data_list[1][select-1] = input("Please enter new name: ")
-
+                    while True:
+                        select = input("Please select a hospital to update name > ")
+                        try:
+                            select = int(select)
+                            break
+                        except ValueError:
+                            print("Please enter only numbers!")
+                            continue
+                        data_list[1][select-1] = input("Please enter new name: ")
                 case 3:
                     if len(data_list[0]) == 3:
                         print("There must be minimum 3 hospital in system, unable to delete.")
                     for c,ele in enumerate(data_list[1],1):
                         print(f"{c}. {ele}")
-                    delete = int(input("Please select a hospital to delete > "))
+                    while True:
+                        delete = input("Please select a hospital to delete > ")
+                        try:
+                            delete = int(delete)
+                            break
+                        except ValueError:
+                            print("Please enter only number!")
+                            continue
                     (data_list[1]).pop(delete-1)
                     (data_list[0]).pop()
                 
                 case _:
                     print("Please select a valid option")
 
-            with open("hospitals.txt","w") as f:
-                        for data in data_list:
-                            f.write(",".join(data) + "\n")
+            config_save("hospitals.txt","w",data_list)
 
 #save config for ppe.txt    
 def config_save(fileName,mode,data_list):

@@ -79,10 +79,9 @@ def inv_update():
                 lines[selection - 1] = (f"{itemcode},{new_quantity},{supplier}\n")
                 trans_data.append(trans_line)
         #Write data
-        with open("ppe.txt","w") as f:
-            f.writelines(lines)
-        with open("transactions.txt","a") as f:
-            f.writelines("\n".join(trans_data))
+        with open("ppe.txt","w") as pf, open("transactions.txt","a") as tf:
+            pf.writelines(lines)
+            tf.writelines("\n".join(trans_data))
             print(f"Inventory updated>  {item_name[selection-1]} = {new_quantity} Boxes")
         inv_update()  
 

@@ -9,6 +9,7 @@ def init_inv():
         with open("ppe.txt","r") as f:
             if f.read() == "":
                 init_supplier()
+                init_hospital()
                 data_list = assign_supplier()
                 print("Inventory initiated")
                 with open("ppe.txt","a") as f:
@@ -368,7 +369,7 @@ def menu(user_type):
     if user_type == "admin":
         print(f"\tINVENTORY MANAGEMENT SYSTEM (Admin)\n\t{'+'*34}")
         while True:
-            select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Logout\n> ")
+            select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Update hospital\n\t9. Logout\n> ")
             try:
                 #Check if user entered anythings other than number
                 select = int(select)
@@ -392,6 +393,8 @@ def menu(user_type):
                 case 7:
                     modify_user()
                 case 8:
+                    update_hospital()
+                case 9:
                     backup()
                 case _:
                     print("Invalid selection! Please try again.") 
@@ -474,12 +477,70 @@ def init_supplier():
         else:
             return
 
+#Initial Hospital
+def init_hospital():
+    data_list,code_list,name_list = [],[],[]
+    with open("hospitals.txt","r") as f:
+        lines = f.readlines()
+        for line in lines:
+                data_list.append(line.strip().split(","))
+        if len(lines) == 0:
+                for i in range(3):
+                    name_list.append(input(f"There should be minimum of three hospital (Current: 0)\nPlease enter hospital {i+1} name: "))
+                    code_list.append(f"S{len(name_list)}")
+                    with open("hospitals.txt","w") as f:
+                        f.write(",".join(code_list) + "\n")
+                        f.write(",".join(name_list))
+
+#Modify hospital
+def update_hospital():
+    data_list = []
+    with open("hospitals.txt","r") as f:
+        lines = f.readlines()
+        for line in lines:
+            data_list.append(line.strip().split(","))
+        while True:
+            selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add hospital\n\t2. Change hospital name\n\t3. Delete hospital\n\t> ")
+            if not selection:
+                return
+            try:
+                selection = int(selection)
+            except ValueError:
+                print("Please enter only number!")
+                continue
+            match selection:
+                case 1:
+                    data_list[1].append(input("Please enter new hospital name: "))
+                    data_list[0].append(f"S{len(data_list[0])+1}")
+                case 2:
+                    for c,ele in enumerate(data_list[0],1):
+                        print(f"{c}. {ele}")
+                    select = int(input("Please select a hospital to update name > "))
+                    data_list[1][select-1] = input("Please enter new name: ")
+
+                case 3:
+                    if len(data_list[0]) == 3:
+                        print("There must be minimum 3 hospital in system, unable to delete.")
+                    for c,ele in enumerate(data_list[1],1):
+                        print(f"{c}. {ele}")
+                    delete = int(input("Please select a hospital to delete > "))
+                    (data_list[1]).pop(delete-1)
+                    (data_list[0]).pop()
+                
+                case _:
+                    print("Please select a valid option")
+
+            with open("hospitals.txt","w") as f:
+                        for data in data_list:
+                            f.write(",".join(data) + "\n")
+
 #save config for ppe.txt    
 def config_save(fileName,mode,data_list):
     with open(fileName,mode) as f:
         for data in data_list:
             f.write(",".join(data) + "\n")
 
+#Backup when quit
 def backup():
     data_list,files, = [],["ppe.txt","users.txt"]
     for file in files:
@@ -491,5 +552,7 @@ def backup():
             for i in data_list:
                 f.write(",".join(i) + "\n")
     quit()
+
+
 
 init_inv()

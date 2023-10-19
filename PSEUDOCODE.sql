@@ -669,13 +669,9 @@ FUNCTION init_supplier()
         END IF
 END FUNCTION
 
-FUNCTION config_save(fileName, mode, uid_list, username_list, password_list, type_list)
-    OPEN filename WITH mode AS f THEN
-        WRITE a string consisting of joined uid_list followed by a newline character to the file f
-        WRITE a string consisting of joined username_list followed by a newline character to the file f
-        WRITE a string consisting of joined password_list followed by a newline character to the file f
-        WRITE a string consisting of joined type_list followed by a newline character to the file f
-
+FUNCTION config_save(fileName,mode,data_list)
+    FOR data in data_list THEN
+        WRITE ",".JOIN(data) + "\n"
 # Initiate inventory
 CALL FUNCTION init_inv()
 

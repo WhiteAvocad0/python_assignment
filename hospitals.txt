@@ -1,2 +1,2 @@
-HospitalsID:
-Hos A, Hos B, Hos C, Hos D
+S1,S2,S3
+HospitalJB,HospitalKL,HospitalPenang

@@ -1,9 +1,9 @@
-FS,310,S1
-GL,300,S2
-GW,100,S3
-HC,4100,S4
-MS,100,S4
-SC,90,S1
+FS,100,S1
+GL,100,S2
+GW,100,S2
+HC,100,S3
+MS,100,S3
+SC,100,S4
 uid1,uid2,uid3,uid4,uid5
 admin,jrm,jeremy,yyy,test
 admin,jrm,0731,yyy,test

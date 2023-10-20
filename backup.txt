@@ -4,7 +4,7 @@ GW,100,S2
 HC,100,S3
 MS,100,S3
 SC,100,S4
-uid1,uid2,uid3,uid4,uid5
-admin,jrm,jeremy,yyy,test
-admin,jrm,0731,yyy,test
-staff,admin,admin,staff,staff
+uid1,uid2,uid3
+admin,jrm,test
+admin,jrm,test
+admin,admin,staff

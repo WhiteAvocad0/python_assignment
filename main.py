@@ -8,6 +8,7 @@ def init_inv():
     try:
         with open("ppe.txt","r") as f:
             if f.read() == "":
+                utype = login()
                 init_supplier()
                 init_hospital()
                 data_list = assign_supplier()
@@ -15,7 +16,6 @@ def init_inv():
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
                         f.write(f"{item_code[i]},{100},{data_list[i]}\n")
-                utype = login()
                 menu(utype)
             else:
                 utype = login()
@@ -91,49 +91,40 @@ def inv_update():
 
 #Login menu
 def login():
-    data_list = []
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        #List check
-        for line in lines:
-            data_list.append(line.strip().split(","))
-        #Check if username match password
-        while True:
-            username,passwd = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
-            if username in data_list[1] and passwd == data_list[2][data_list[1].index(username)]:
-                check_type = (data_list[3][data_list[1].index(username)])
-                return check_type
-            elif username == "" and passwd == "":
-                quit()
-            else:
-                print("Invalid credential. Please try again.")
-                break
+    data_list = readfiles("users.txt")
+    #Check if username match password
+    while True:
+        username,passwd = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
+        if username in data_list[1] and passwd == data_list[2][data_list[1].index(username)]:
+            check_type = (data_list[3][data_list[1].index(username)])
+            return check_type
+        elif username == "" and passwd == "":
+            quit()
+        else:
+            print("Invalid credential. Please try again.")
+            break
     init_inv()
 
 #Add new user
 def register():
-    data_list = []
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        for line in lines:
-            data_list.append(line.strip().split(","))
-        #UID Generation
-        for c in enumerate(data_list[0],1):
-            last_id = c
-        username = input("\tPlease enter register credential\n\tUsername: ")
-        #Check if username already exist
-        if username in data_list[1]:
-            print("Username already exist!")
-            register()
-        #Append User Data
-        data_list[0].append(f"uid{last_id[0]+1}")
-        data_list[1].append(username)
-        data_list[2].append(input("\tPassword: "))
-        data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
-        #Write Data
-        config_save("users.txt","w",data_list)
-        print("> New user added\nReturning to menu...")
-        return
+    data_list = readfiles("users.txt")
+    #UID Generation
+    for c in enumerate(data_list[0],1):
+        last_id = c
+    username = input("\tPlease enter register credential\n\tUsername: ")
+    #Check if username already exist
+    if username in data_list[1]:
+        print("Username already exist!")
+        register()
+    #Append User Data
+    data_list[0].append(f"uid{last_id[0]+1}")
+    data_list[1].append(username)
+    data_list[2].append(input("\tPassword: "))
+    data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
+    #Write Data
+    config_save("users.txt","w",data_list)
+    print("> New user added\nReturning to menu...")
+    return
 
 #Inventory tracking
 def inv_track():
@@ -202,43 +193,34 @@ def inv_track():
 
 #Delete user
 def delete_user():
-    data_list = []
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        #List check
-        for line in lines:
-            data_list.append(line.strip().split(","))
-        #Print username list
-        for c,ele in enumerate(data_list[1],1):
-            print(f"{c}. {ele}")
-        while True:
-            selection = (input("Select the user you want to remove (Leave empty to quit) > "))
-            if not selection:
-                return
-            try:
-                selection = int(selection)
-                break
-            except ValueError:
-                print("Please enter only number!")
-                continue
-        #Remove selected data from users.txt
-        data_list[0].pop()
-        for i in range(3):
-            data_list[i+1].pop(selection-1)
-        config_save("users.txt","w",data_list)
-    delete_user()
-
-#Search user
-def search_user(fileName,mode):
-    data_list = []
-    with open(fileName,mode) as f:
-        lines = f.readlines()
-        for line in lines:
-            data_list.append(line.strip().split(","))
+    data_list = readfiles("users.txt")
+    #Print username list
     for c,ele in enumerate(data_list[1],1):
         print(f"{c}. {ele}")
     while True:
-        selection = int(input("Please select an user to search (Leave empty to quit)\n> "))
+        selection = (input("Select the user you want to remove (Leave empty to quit) > "))
+        if not selection:
+            return
+        try:
+            selection = int(selection)
+            break
+        except ValueError:
+            print("Please enter only number!")
+            continue
+    #Remove selected data from users.txt
+    data_list[0].pop()
+    for i in range(3):
+        data_list[i+1].pop(selection-1)
+    config_save("users.txt","w",data_list)
+    delete_user()
+
+#Search user
+def search_user():
+    data_list = readfiles("users.txt")
+    for c,ele in enumerate(data_list[1],1):
+        print(f"{c}. {ele}")
+    while True:
+        selection = input("Please select an user to search (Leave empty to quit)\n> ")
         if not selection:
             return
         try:
@@ -251,7 +233,7 @@ def search_user(fileName,mode):
         except ValueError:
             print("Please enter only number!")
             continue 
-    search_user("users.txt","r")
+    search_user()
 
 #Search Transactions.txt
 def search():
@@ -289,83 +271,78 @@ def search():
 
 #Modify user
 def modify_user():
-    data_list = []
-    #USER DATA
-    with open("users.txt","r") as f:
-        lines = f.readlines()
-        for line in lines:
-            data_list.append(line.strip().split(","))
-        #Print username list
-        while True:
-            for c,ele in enumerate(data_list[1],1):
-                print(f"{c}. {ele}")
-            selection = input("Please select an user to modify (Leave empty to quit)\n> ")
-            if not selection:
-                return
-            try:
-                selection = int(selection)
-                if selection > len(data_list[1]):
-                    print("Please select a valid option!")
-                else:
-                    while True:
-                        modify_item = input("\tPlease select an item to modify (Leave empty to quit)\n\t1. Username\n\t2. Password\n\t3. User Type\t\n> ")
-                        if not modify_item:
-                            return
-                        try:
-                            modify_item = int(modify_item)
-                            break
-                        except ValueError:
-                            print("Please enter only numbers!")
-                            continue
-                    match modify_item:
-                        case 1:
-                            while True:
-                                new_username = input(f"Please enter a new username\nCurrent username: {data_list[1][selection-1]}\nNew username: ")
-                                if not new_username:
-                                    print("Username cannot be empty. Please enter a valid username.")
-                                elif new_username in data_list[1]:
-                                    print("Username already exists. Please choose a different one.")
-                                else:
-                                    data_list[1][selection-1] = new_username
-                                    break
-                        case 2:
-                            while True:
-                                new_password = input(f"Please enter a new password\nCurrent password: {data_list[2][selection-1]}\nNew password: ")
-                                if not new_username:
-                                    print("Password cannot be empty. Please enter a valid password.")
-                                else:
-                                    data_list[2][selection-1] = new_password
-                                    break
-                        case 3:
-                            while True:
-                                new_type = int(input(f"Please enter a new user type\nCurrent user type: {data_list[3][selection-1]}\nNew user type (1. Admin/2. Staff): "))
-                                if not new_type:
-                                    print("User type cannot be empty. Please select a valid option.")
-                                else:
-                                    match new_type:
-                                        case 1:
-                                            new_type = "admin"
-                                            data_list[3][selection-1] = new_type
-                                        case 2:
-                                            new_type = "staff"
-                                            data_list[3][selection-1] = new_type
-                                        case _:
-                                            print("Please select a valid option.")
-                                            continue
-                                    break
-                                try:
-                                    new_type = int(new_type)
-                                except ValueError:
-                                    print("Please enter only numbers!")
-                        case _:
-                            print("Invalid selection! Please try again.")
-                            modify_user()
-                    #Write new data into users.txt
-                    config_save("users.txt","w",data_list)
-                    print("---------------------Done---------------------")
-            except ValueError:
-                print("Please enter only number!")
-                continue    
+    data_list = readfiles("users.txt")
+    #Print username list
+    while True:
+        for c,ele in enumerate(data_list[1],1):
+            print(f"{c}. {ele}")
+        selection = input("Please select an user to modify (Leave empty to quit)\n> ")
+        if not selection:
+            return
+        try:
+            selection = int(selection)
+            if selection > len(data_list[1]):
+                print("Please select a valid option!")
+            else:
+                while True:
+                    modify_item = input("\tPlease select an item to modify (Leave empty to quit)\n\t1. Username\n\t2. Password\n\t3. User Type\t\n> ")
+                    if not modify_item:
+                        return
+                    try:
+                        modify_item = int(modify_item)
+                        break
+                    except ValueError:
+                        print("Please enter only numbers!")
+                        continue
+                match modify_item:
+                    case 1:
+                        while True:
+                            new_username = input(f"Please enter a new username\nCurrent username: {data_list[1][selection-1]}\nNew username: ")
+                            if not new_username:
+                                print("Username cannot be empty. Please enter a valid username.")
+                            elif new_username in data_list[1]:
+                                print("Username already exists. Please choose a different one.")
+                            else:
+                                data_list[1][selection-1] = new_username
+                                break
+                    case 2:
+                        while True:
+                            new_password = input(f"Please enter a new password\nCurrent password: {data_list[2][selection-1]}\nNew password: ")
+                            if not new_password:
+                                print("Password cannot be empty. Please enter a valid password.")
+                            else:
+                                data_list[2][selection-1] = new_password
+                                break
+                    case 3:
+                        while True:
+                            new_type = int(input(f"Please enter a new user type\nCurrent user type: {data_list[3][selection-1]}\nNew user type (1. Admin/2. Staff): "))
+                            if not new_type:
+                                print("User type cannot be empty. Please select a valid option.")
+                            else:
+                                match new_type:
+                                    case 1:
+                                        new_type = "admin"
+                                        data_list[3][selection-1] = new_type
+                                    case 2:
+                                        new_type = "staff"
+                                        data_list[3][selection-1] = new_type
+                                    case _:
+                                        print("Please select a valid option.")
+                                        continue
+                                break
+                            try:
+                                new_type = int(new_type)
+                            except ValueError:
+                                print("Please enter only numbers!")
+                    case _:
+                        print("Invalid selection! Please try again.")
+                        modify_user()
+                #Write new data into users.txt
+                config_save("users.txt","w",data_list)
+                print("---------------------Done---------------------")
+        except ValueError:
+            print("Please enter only number!")
+            continue    
 
 #Admin menu
 def menu(user_type):
@@ -392,7 +369,7 @@ def menu(user_type):
                 case 5:
                     delete_user()
                 case 6:
-                    search_user("users.txt","r")
+                    search_user()
                 case 7:
                     modify_user()
                 case 8:
@@ -497,56 +474,52 @@ def init_hospital():
 
 #Modify hospital
 def update_hospital():
-    data_list = []
-    with open("hospitals.txt","r") as f:
-        lines = f.readlines()
-        for line in lines:
-            data_list.append(line.strip().split(","))
-        while True:
-            selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add hospital\n\t2. Change hospital name\n\t3. Delete hospital\n\t> ")
-            if not selection:
-                return
-            try:
-                selection = int(selection)
-            except ValueError:
-                print("Please enter only number!")
-                continue
-            match selection:
-                case 1:
-                    data_list[1].append(input("Please enter new hospital name: "))
-                    data_list[0].append(f"H{len(data_list[0])+1}")
-                case 2:
-                    for c,ele in enumerate(data_list[0],1):
-                        print(f"{c}. {ele}")
-                    while True:
-                        select = input("Please select a hospital to update name > ")
-                        try:
-                            select = int(select)
-                            break
-                        except ValueError:
-                            print("Please enter only numbers!")
-                            continue
-                        data_list[1][select-1] = input("Please enter new name: ")
-                case 3:
-                    if len(data_list[0]) == 3:
-                        print("There must be minimum 3 hospital in system, unable to delete.")
-                    for c,ele in enumerate(data_list[1],1):
-                        print(f"{c}. {ele}")
-                    while True:
-                        delete = input("Please select a hospital to delete > ")
-                        try:
-                            delete = int(delete)
-                            break
-                        except ValueError:
-                            print("Please enter only number!")
-                            continue
-                    (data_list[1]).pop(delete-1)
-                    (data_list[0]).pop()
-                
-                case _:
-                    print("Please select a valid option")
+    data_list = readfiles("hospitals.txt")
+    while True:
+        selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add hospital\n\t2. Change hospital name\n\t3. Delete hospital\n\t> ")
+        if not selection:
+            return
+        try:
+            selection = int(selection)
+        except ValueError:
+            print("Please enter only number!")
+            continue
+        match selection:
+            case 1:
+                data_list[1].append(input("Please enter new hospital name: "))
+                data_list[0].append(f"H{len(data_list[0])+1}")
+            case 2:
+                for c,ele in enumerate(data_list[0],1):
+                    print(f"{c}. {ele}")
+                while True:
+                    select = input("Please select a hospital to update name > ")
+                    try:
+                        select = int(select)
+                        break
+                    except ValueError:
+                        print("Please enter only numbers!")
+                        continue
+                data_list[1][select-1] = input("Please enter new name: ")
+            case 3:
+                if len(data_list[0]) == 3:
+                    print("There must be minimum 3 hospital in system, unable to delete.")
+                for c,ele in enumerate(data_list[1],1):
+                    print(f"{c}. {ele}")
+                while True:
+                    delete = input("Please select a hospital to delete > ")
+                    try:
+                        delete = int(delete)
+                        break
+                    except ValueError:
+                        print("Please enter only number!")
+                        continue
+                (data_list[1]).pop(delete-1)
+                (data_list[0]).pop()
+            
+            case _:
+                print("Please select a valid option")
 
-            config_save("hospitals.txt","w",data_list)
+        config_save("hospitals.txt","w",data_list)
 
 #save config for ppe.txt    
 def config_save(fileName,mode,data_list):
@@ -566,5 +539,13 @@ def backup():
             for i in data_list:
                 f.write(",".join(i) + "\n")
     quit()
+
+def readfiles(file):
+    data_list = []
+    with open(file,"r") as f:
+        lines = f.readlines()
+        for line in lines:
+            data_list.append(line.strip().split(","))
+    return data_list
 
 init_inv()

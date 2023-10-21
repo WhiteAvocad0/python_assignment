@@ -466,7 +466,7 @@ def init_hospital():
                 data_list.append(line.strip().split(","))
         if len(lines) == 0:
                 for i in range(3):
-                    name_list.append(input(f"There should be minimum of three hospital (Current: 0)\nPlease enter hospital {i+1} name: "))
+                    name_list.append(input(f"There should be minimum of three hospital (Current: {len(name_list)+1})\nPlease enter hospital {i+1} name: "))
                     code_list.append(f"H{len(name_list)}")
                     with open("hospitals.txt","w") as f:
                         f.write(",".join(code_list) + "\n")

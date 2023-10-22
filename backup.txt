@@ -1,10 +1,10 @@
-FS,100,S1
+FS,1178,S1
 GL,100,S2
-GW,100,S2
+GW,10,S2
 HC,100,S3
 MS,100,S3
 SC,100,S4
 uid1,uid2,uid3
-admin,jrm,test
-admin,jrm,test
-admin,admin,staff
+admin,newuser,
+admin,newuser,
+admin,staff,admin

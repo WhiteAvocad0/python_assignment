@@ -59,7 +59,7 @@ def inv_update():
                 match menu_select:
                     case 1:
                         new_quantity = int(ele[1]) + quantity_to_change
-                        trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | +{quantity_to_change}\n")
+                        trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | {quantity_to_change}\n")
                     case 2:
                         if int(ele[1]) == 0 or quantity_to_change > int(ele[1]):
                             print("Insufficient for distribution")
@@ -76,7 +76,7 @@ def inv_update():
                                 except ValueError:
                                     print("Please valid number!")
                                     continue
-                        trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | -{quantity_to_change}\n") 
+                        trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | {quantity_to_change}\n") 
                     case _:
                         print("Invalid selection. Please try again.")
                 #Append data        
@@ -107,6 +107,7 @@ def login():
 
 #Add new user
 def register():
+    #Read users.txt
     data_list = readfiles("users.txt")
     #UID Generation
     for c in enumerate(data_list[0],1):
@@ -116,88 +117,99 @@ def register():
     if username in data_list[1]:
         print("Username already exist!")
         register()
-    #Append User Data
-    data_list[0].append(f"uid{last_id[0]+1}")
-    data_list[1].append(username)
-    data_list[2].append(input("\tPassword: "))
-    data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
-    #Write Data
-    config_save("users.txt","w",data_list)
-    print("> New user added\nReturning to menu...")
-    return
+    else:
+        #Append User Data
+        data_list[0].append(f"uid{last_id[0]+1}")
+        data_list[1].append(username)
+        data_list[2].append(input("\tPassword: "))
+        data_list[3].append(input("\tAccount Type (admin/staff): ").lower())
+        #Write Data
+        config_save("users.txt","w",data_list)
+        print("> New user added\nReturning to menu...")
+        return
 
 #Inventory tracking
 def inv_track():
     item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
+    items_list, quantity_list = [],[]
+    with open("ppe.txt","r") as f:
+        lines = f.readlines()
+        for c,line in enumerate(lines,1):
+            data = line.strip().split(",")
+            items_list.append(item_name[item_code.index(data[0].strip())])
+            quantity_list.append(int(data[1].strip()))
     while True:
+        #Select an option from menu
         selection = (input(f"{'-'*66}\n\tPlease select and option (Leave empty to exit) :\n\t1. Check all items quantity\n\t2. Item less than 25 boxes\n\t3. Check specific item\n\t4. Item received during specific time\n\tn> "))
         if not selection:
             return
         try:
             selection = int(selection)
-            break
         except ValueError:
             print("Please enter only number!")
             continue
-    match selection:
-        case 1:
-            print("\tQuantity of all items:")
-        case 2:
-            print("\tItem less than 25 Boxes:")
-        case 3:
-            for c,ele in enumerate(item_name,1):
-                print(f"\t{c}. {ele}")
-            item_selection = int(input("Please select an item: "))
-        case 4:
-            transactions_list,date_list,time_list = [],[],[]
-            with open("transactions.txt","r") as f:
-                lines = f.readlines()
-                for line in lines:
-                    data,transactions_data,date_data = line.strip().split(" | "),line.strip(),(data[3].strip().split(" "))
-                    if transactions_data.startswith("Receive"):
-                        date_list.append(date_data[0])
-                        time_list.append(date_data[1])
-                        transactions_list.append(transactions_data)
-                print("Date & time of received items")
-                for c,(date_ele,time_ele) in enumerate(zip(date_list,time_list),1):
-                    print(f"{c}. {date_ele} {time_ele}")
-                start_date,end_date = int(input("Please select an start date > ")), int(input("Please select an end date > "))
-                print(f"Type     Item From  Date & Time\t\t Quantity\n{'-'*53}")
-                for transaction in range(start_date,end_date+1):
-                    print(transactions_list[transaction-1])
-                inv_track()
-        case 5:
-            return
-        case _:
-            print("Invalid selection! Please try again.")
-            inv_track()
-    with open("ppe.txt","r") as f:
-        lines = f.readlines()
-        for c,line in enumerate(lines,1):
-            data = line.strip().split(",")
-            items,quantity = item_name[item_code.index(data[0].strip())],int(data[1].strip())
-            match selection:
-                case 1:
+        match selection:
+            #Option 1, check all items
+            case 1:
+                print("\tQuantity of all items:")
+                for items,quantity in zip(items_list,quantity_list):
                     print(f"\t{items} = {quantity}")
-                case 2:
+            #Option 2, display item that is less than 25 boxes
+            case 2:
+                print("\tItem less than 25 Boxes:")
+                for items,quantity in zip(items_list,quantity_list):
+                    #Check if item is less than 25 boxes
                     if quantity < 25:
-                        print(quantity)
                         print(f"\t{items} = {quantity}")
-                    else:
-                        print("\tNo items are less than 25 Boxes !")
-                        break
-                case 3:
+            #Option 3, display specific item
+            case 3:
+                #List out all items 
+                for c,ele in enumerate(item_name,1):
+                    print(f"\t{c}. {ele}")
+                #Item selection
+                item_selection = int(input("Please select an item: "))
+                for items,quantity in zip(items_list,quantity_list):
                     if items == item_name[item_selection-1]:
-                        print(f"\t{items} = {quantity}")
-        inv_track()
+                                print(f"\t{items} = {quantity}")
+            #Option 4. display item from specific date 
+            case 4:
+                transactions_list,date_list,time_list = [],[],[]
+                #Read transactions.txt
+                with open("transactions.txt","r") as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        data =  line.strip().split(" | ")
+                        transactions_data = line.strip()
+                        date_data = (data[3].strip().split(" "))
+                        #Find data that starts with "Receive"
+                        if transactions_data.startswith("Receive"):
+                            #Append filtered data into list
+                            date_list.append(date_data[0])
+                            time_list.append(date_data[1])
+                            transactions_list.append(transactions_data)
+                    print("Date & time of received items")
+                    #List out all date and time data
+                    for c,(date_ele,time_ele) in enumerate(zip(date_list,time_list),1):
+                        print(f"{c}. {date_ele} {time_ele}")
+                    #Input start date and end date
+                    start_date,end_date = int(input("Please select an start date > ")), int(input("Please select an end date > "))
+                    print(f"Type     Item From  Date & Time\t\t Quantity\n{'-'*53}")
+                    for transaction in range(start_date,end_date+1):
+                        print(transactions_list[transaction-1])
+                    inv_track()
+            case _:
+                print("Invalid selection! Please try again.")
+                inv_track()
 
 #Delete user
-def delete_user():
+def delete_user(user_type):
+    #Read users.txt
     data_list = readfiles("users.txt")
     #Print username list
     for c,ele in enumerate(data_list[1],1):
         print(f"{c}. {ele}")
     while True:
+        #Prompt user to select a user to remove
         selection = (input("Select the user you want to remove (Leave empty to quit) > "))
         if not selection:
             return
@@ -207,19 +219,27 @@ def delete_user():
         except ValueError:
             print("Please enter only number!")
             continue
-    #Remove selected data from users.txt
-    data_list[0].pop()
-    for i in range(3):
-        data_list[i+1].pop(selection-1)
-    config_save("users.txt","w",data_list)
-    delete_user()
+    #Check if the selected users is current logged in user
+    if data_list[1][selection-1] == user_type:
+        print("Unable to delete current logged in user!")
+        delete_user(user_type)
+    else:
+        #Remove selected data from users.txt
+        data_list[0].pop()
+        for i in range(3):
+            data_list[i+1].pop(selection-1)
+        config_save("users.txt","w",data_list)
+        delete_user(user_type)
 
 #Search user
 def search_user():
+    #Read data from users.txt
     data_list = readfiles("users.txt")
+    #List all user data 
     for c,ele in enumerate(data_list[1],1):
         print(f"{c}. {ele}")
     while True:
+        #Prompt user to select an user
         selection = input("Please select an user to search (Leave empty to quit)\n> ")
         if not selection:
             return
@@ -237,8 +257,10 @@ def search_user():
 
 #Search Transactions.txt
 def search():
+    item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     while True:
-        selection = (input("\tPlease select search option (Leave empty to quit):\n\t1. Distribution list\n\t2. Received list\n\t3. All\t\n> "))
+        #Prompt user to select an option
+        selection = (input("\tPlease select search option (Leave empty to quit):\n\t1. Distribution list\n\t2. Received list\n\t3. Specific Item\n\t4. All\n\t> "))
         if not selection:
             return
         try:
@@ -247,27 +269,72 @@ def search():
         except ValueError:
             print("Please enter only number!")
             continue
-    match selection:
-        case 1:
-            print(f"Type        Item  To  Date & Time\t\t    Quantity\n{'-'*60}")
-        case 2:
-            print(f"Type     Item From  Date & Time\t\t\t Quantity\n{'-'*60}")
+    #Read data from transactions.txt
     with open("transactions.txt","r") as f:
+        supplier_code = ["S1","S2","S3","S4"]
+        transaction_suppliercode = []
+        transaction_quantity = []
         lines = f.readlines()
-        for line in lines:
-            data = line.strip()
-            match selection:
-                case 1:
+        match selection:
+            case 1:
+                for line in lines:
+                    data = line.strip()
+                    #Find data that starts with "Distribute"
                     if data.startswith("Distribute"):
-                        print(f"{data}\n{'-'*60}")
-                case 2:
+                        print(data)
+            case 2:
+                for line in lines:
+                    data = line.strip()
+                    #Find data that starts with "Receive"
                     if data.startswith("Receive"):
-                        print(f"{data}\n{'-'*60}")
-                case 3:
+                        print(data)
+            case 3:
+                data_list = []
+                item_code, item_name = ["FS", "GL", "GW", "HC", "MS", "SC"], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
+                supplier_code = ["S1", "S2", "S3", "S4"]
+                hospital_code = ["H1", "H2", "H3", "H4"]
+                quantities = [0] * len(supplier_code)
+
+                for c, ele in enumerate(item_code, 1):
+                    print(f"{c}. {ele}")
+                item_code_selection = int(input("Please select an item: "))
+
+                with open("transactions.txt", "r") as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        data = line.strip().split(" | ")
+                        data.pop(3)
+                        data_list.append(data)
+                type_selection = int(input("Please select an option:\n1. Receive\n2. Distribute\n> "))
+                match type_selection:
+                    case 1:
+                        for data in data_list:
+                            if data[1] == item_name[item_code_selection - 1]:
+                                supplier_index = supplier_code.index(data[2])
+                                quantities[supplier_index] += int(data[3])
+                        print(f"\n{item_name[item_code_selection - 1]}")
+                        for spcode,quantity in zip(supplier_code,quantities):
+                            print(f"{spcode} = {quantity}")
+                    
+                    case 2:
+                        for data in data_list:
+                            if data[1] == item_name[item_code_selection - 1]:
+                                hospital_index = hospital_code.index(data[2])
+                                quantities[hospital_index] += int(data[3])
+                        print(f"\n{item_name[item_code_selection - 1]}")
+                        for hpcode,quantity in zip(hospital_code,quantities):
+                            print(f"{hpcode} = {quantity}")
+                    case _:
+                        print("Invalid Selection")
+
+            case 4:
+                for line in lines:
+                    data = line.strip()
+                    #Print all data
                     print(data)
-                case _:
-                    print("Invalid selection! Please try again.")
-        search()
+            case _:
+                print("Invalid selection! Please try again.")
+    search()
 
 #Modify user
 def modify_user():
@@ -367,7 +434,7 @@ def menu(user_type):
                 case 4:
                     register()
                 case 5:
-                    delete_user()
+                    delete_user(user_type)
                 case 6:
                     search_user()
                 case 7:
@@ -540,6 +607,7 @@ def backup():
                 f.write(",".join(i) + "\n")
     quit()
 
+#Read files
 def readfiles(file):
     data_list = []
     with open(file,"r") as f:

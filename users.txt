@@ -1,4 +1,4 @@
-uid1,uid2,uid3
-admin,newuser,
-admin,newuser,
-admin,staff,admin
+uid1,uid2
+admin,newstaff
+admin,newpassword
+admin,admin

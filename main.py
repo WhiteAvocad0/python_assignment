@@ -245,6 +245,7 @@ def search_user():
             return
         try:
             selection = int(selection)
+            #Check is selection is bigger than numbers of data
             if selection > len(data_list[1]):
                 print("Please select a valid option!")
             else:
@@ -364,8 +365,10 @@ def modify_user():
                 match modify_item:
                     case 1:
                         while True:
+                            #Prompt user to input new username
                             new_username = input(f"Please enter a new username\nCurrent username: {data_list[1][selection-1]}\nNew username: ")
                             if not new_username:
+                                #If input is empty
                                 print("Username cannot be empty. Please enter a valid username.")
                             elif new_username in data_list[1]:
                                 print("Username already exists. Please choose a different one.")
@@ -374,23 +377,28 @@ def modify_user():
                                 break
                     case 2:
                         while True:
+                            #Prompt user to enter new password
                             new_password = input(f"Please enter a new password\nCurrent password: {data_list[2][selection-1]}\nNew password: ")
                             if not new_password:
+                                #If input is empty
                                 print("Password cannot be empty. Please enter a valid password.")
                             else:
                                 data_list[2][selection-1] = new_password
                                 break
-                    case 3:
+                    case 3:     
                         while True:
+                            #Prompt user to input new user type
                             new_type = int(input(f"Please enter a new user type\nCurrent user type: {data_list[3][selection-1]}\nNew user type (1. Admin/2. Staff): "))
                             if not new_type:
                                 print("User type cannot be empty. Please select a valid option.")
                             else:
                                 match new_type:
                                     case 1:
+                                        #If new user type is admin
                                         new_type = "admin"
                                         data_list[3][selection-1] = new_type
                                     case 2:
+                                        #If new user type is staff
                                         new_type = "staff"
                                         data_list[3][selection-1] = new_type
                                     case _:
@@ -541,6 +549,7 @@ def init_hospital():
 
 #Modify hospital
 def update_hospital():
+    
     data_list = readfiles("hospitals.txt")
     while True:
         selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add hospital\n\t2. Change hospital name\n\t3. Delete hospital\n\t> ")
@@ -587,6 +596,25 @@ def update_hospital():
                 print("Please select a valid option")
 
         config_save("hospitals.txt","w",data_list)
+
+def update_supplier():
+    data_list = readfiles("suppliers.txt")
+    while True:
+        selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add Supplier\n\t2. Change Supplier name\n\t3. Delete Supplier")
+        if not selection:
+            return
+        try:
+            selection.isdigit()
+            break
+        except ValueError:
+            print("Please enter only number!")
+            continue
+    match selection:
+        case 1:
+            for c,ele in enumerate(data_list[1],1):
+                print(f"{c}. {ele}")
+            
+            
 
 #save config for ppe.txt    
 def config_save(fileName,mode,data_list):

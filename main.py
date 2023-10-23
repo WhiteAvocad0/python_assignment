@@ -263,7 +263,6 @@ def search():
     item_code,item_name = [], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     for item in item_list:
         item_code.append(item[0])
-    print(item_code)
     while True:
         #Prompt user to select an option
         selection = (input("\tPlease select search option (Leave empty to quit):\n\t1. Distribution list\n\t2. Received list\n\t3. Specific Item\n\t4. All\n\t> "))
@@ -305,27 +304,34 @@ def search():
                     lines = f.readlines()
                     for line in lines:
                         data = line.strip().split(" | ")
+                        dataa = line.strip()
                         data.pop(3)
                         data_list.append(data)
                 type_selection = int(input("Please select an option:\n1. Receive\n2. Distribute\n> "))
                 match type_selection:
                     case 1:
-                        for data in data_list:
-                            if data[1] == item_name[item_code_selection - 1]:
-                                supplier_index = supplier_code[0].index(data[2])
-                                quantities[supplier_index] += int(data[3])
-                        print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
-                        for spcode,quantity in zip(supplier_code[1],quantities):
-                            print(f"{spcode} = {quantity}")
+                        if dataa.startswith("Receive"):
+                            for data in data_list:
+                                if data[1] == item_name[item_code_selection - 1]:
+                                    supplier_index = supplier_code[0].index(data[2])
+                                    quantities[supplier_index] += int(data[3])
+                            print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
+                            for spcode,quantity in zip(supplier_code[1],quantities):
+                                print(f"From {spcode} = {quantity}")
+                        else:
+                            print("No data found!")
                     
                     case 2:
-                        for data in data_list:
-                            if data[1] == item_name[item_code_selection - 1]:
-                                hospital_index = hospital_code[0].index(data[2])
-                                quantities[hospital_index] += int(data[3])
-                        print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
-                        for hpcode,quantity in zip(hospital_code[1],quantities):
-                            print(f"{hpcode} = {quantity}")
+                        if dataa.startswith("Distribute"):
+                            for data in data_list:
+                                if data[1] == item_name[item_code_selection - 1]:
+                                    hospital_index = hospital_code[0].index(data[2])
+                                    quantities[hospital_index] += int(data[3])
+                            print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
+                            for hpcode,quantity in zip(hospital_code[1],quantities):
+                                print(f"From {hpcode} = {quantity}")
+                        else:
+                            print("No data found!")
                     case _:
                         print("Invalid Selection")
 

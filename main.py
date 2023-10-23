@@ -312,8 +312,6 @@ def search():
                     lines = f.readlines()
                     for line in lines:
                         data = line.strip().split(" | ")
-                        check_data = line.strip()
-                        data.pop(3)
                         data_list.append(data)
                 type_selection = int(input("Please select an option:\n1. Receive\n2. Distribute\n> "))
                 if len(lines) == 0:
@@ -324,13 +322,20 @@ def search():
                         case 1:
                             #Find data that starts with receive
                             for data in data_list:
+                                #Check if data is start with Receive
                                 if data[0] == "Receive":
+                                    #Loop through all data in data_list
                                     for data in data_list:
                                         #Loop through data in data list and match data with selection
+                                        #Filter data with supplier code only
                                         if data[1] == item_name[item_code_selection - 1] and data[2][0] == "S":
+                                            #Find supplier index with
+                                            #Match the index of supplier
                                             supplier_index = supplier_code[0].index(data[2])
-                                            quantities[supplier_index] += int(data[3])
-                                    print(f"Item: {item_name[item_code_selection - 1]}, Type: Receive")
+                                            #Sum data into quantity specific index of quantity > [100,0,0,0]
+                                            quantities[supplier_index] += int(data[4])
+                                            latest_date_time = data[3]
+                                    print(f"Item: {item_name[item_code_selection - 1]}, Lastest Time: {latest_date_time}")
                                     for spcode,quantity in zip(supplier_code[1],quantities):
                                         print(f"From {spcode} = {quantity}")
                                     break

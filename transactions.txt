@@ -1,0 +1,13 @@
+Receive | Face Shield | S1 | 2023-10-23 09:31:23 | 190
+Receive | Gloves | S2 | 2023-10-23 09:31:23 | 120
+Receive | Head Cover | S4 | 2023-10-23 09:31:23 | 22
+Receive | Head Cover | S4 | 2023-10-23 09:31:23 | 100
+Receive | Face Shield | S1 | 2023-10-23 09:31:23 | 44
+Distribute | Head Cover | H1 | 2023-10-23 09:31:23 | 41
+Distribute | Shoe Covers | H1 | 2023-10-23 09:31:23 | 10
+Receive | Head Cover | S4 | 2023-10-23 09:31:23 | 11
+Distribute | Head Cover | H1 | 2023-10-23 09:31:23 | 13
+Receive | Face Shield | S1 | 2023-10-23 09:32:59 | 100
+Distribute | Face Shield | H2 | 2023-10-23 09:32:59 | 10
+Receive | Gloves | S2 | 2023-10-23 10:12:21 | 100
+Receive | Gloves | S2 | 2023-10-23 10:12:21 | 21

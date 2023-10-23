@@ -1,9 +1,9 @@
-FS,100,S1
-GL,100,S2
+FS,424,S1
+GL,220,S2
 GW,100,S3
-HC,100,S4
-MS,100,S2
-SC,100,S2
+HC,179,S4
+MS,100,S4
+SC,90,S1
 uid1,uid2
 admin,newstaff
 admin,newpassword

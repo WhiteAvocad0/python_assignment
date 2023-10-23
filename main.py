@@ -140,7 +140,6 @@ def inv_track():
         for c,line in enumerate(lines,1):
             data = line.strip().split(",")
             items_list.append(item_name[item_code.index(data[0].strip())])
-            print(items_list)
             quantity_list.append(int(data[1].strip()))
     while True:
         #Select an option from menu
@@ -265,6 +264,7 @@ def search():
     item_list = readfiles("ppe.txt")
     item_code,item_name = [], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     for item in item_list:
+        #Appen item code to item_code list
         item_code.append(item[0])
     while True:
         #Prompt user to select an option
@@ -281,63 +281,77 @@ def search():
     with open("transactions.txt","r") as f:
         lines = f.readlines()
         match selection:
+            #Option 1
             case 1:
                 for line in lines:
                     data = line.strip()
                     #Find data that starts with "Distribute"
                     if data.startswith("Distribute"):
                         print(data)
+            #Option 2
             case 2:
                 for line in lines:
                     data = line.strip()
                     #Find data that starts with "Receive"
                     if data.startswith("Receive"):
                         print(data)
+            #Option 3
             case 3:
                 data_list = []
                 supplier_code = readfiles("suppliers.txt")
                 hospital_code = readfiles("hospitals.txt")
                 quantities = [0] * len(supplier_code[0])
-
+                #Data will become [0,0,0,0] for counting purpose
+                
+                #List all available item code
                 for c, ele in enumerate(item_code, 1):
                     print(f"{c}. {ele}")
+                #Input
                 item_code_selection = int(input("Please select an item: "))
-
                 with open("transactions.txt", "r") as f:
                     lines = f.readlines()
                     for line in lines:
                         data = line.strip().split(" | ")
-                        dataa = line.strip()
+                        check_data = line.strip()
                         data.pop(3)
                         data_list.append(data)
                 type_selection = int(input("Please select an option:\n1. Receive\n2. Distribute\n> "))
-                match type_selection:
-                    case 1:
-                        if dataa.startswith("Receive"):
+                if len(lines) == 0:
+                    print("No transaction found!")
+                else:
+                    match type_selection:
+                        #Search received item
+                        case 1:
+                            #Find data that starts with receive
                             for data in data_list:
-                                if data[1] == item_name[item_code_selection - 1]:
-                                    supplier_index = supplier_code[0].index(data[2])
-                                    quantities[supplier_index] += int(data[3])
-                            print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
-                            for spcode,quantity in zip(supplier_code[1],quantities):
-                                print(f"From {spcode} = {quantity}")
-                        else:
-                            print("No data found!")
-                    
-                    case 2:
-                        if dataa.startswith("Distribute"):
+                                if data[0] == "Receive":
+                                    for data in data_list:
+                                        #Loop through data in data list and match data with selection
+                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "S":
+                                            supplier_index = supplier_code[0].index(data[2])
+                                            quantities[supplier_index] += int(data[3])
+                                    print(f"Item: {item_name[item_code_selection - 1]}, Type: Receive")
+                                    for spcode,quantity in zip(supplier_code[1],quantities):
+                                        print(f"From {spcode} = {quantity}")
+                                    break
+                        #Search distributed item
+                        case 2:
+                            #Find data that starts with distribute
                             for data in data_list:
-                                if data[1] == item_name[item_code_selection - 1]:
-                                    hospital_index = hospital_code[0].index(data[2])
-                                    quantities[hospital_index] += int(data[3])
-                            print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
-                            for hpcode,quantity in zip(hospital_code[1],quantities):
-                                print(f"From {hpcode} = {quantity}")
-                        else:
-                            print("No data found!")
-                    case _:
-                        print("Invalid Selection")
-
+                                if data[0] == "Distribute":
+                                    for data in data_list:
+                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "H":
+                                            hospital_index = hospital_code[0].index(data[2])
+                                            quantities[hospital_index] += int(data[3])
+                                    print(f"Item: {item_name[item_code_selection - 1]} Type: Distribute")
+                                    for hpcode,quantity in zip(hospital_code[1],quantities):
+                                        print(f"To {hpcode} = {quantity}")
+                                    break
+                            else:
+                                print("No data found!")
+                        case _:
+                            print("Invalid Selection")
+            #Option 4
             case 4:
                 for line in lines:
                     data = line.strip()

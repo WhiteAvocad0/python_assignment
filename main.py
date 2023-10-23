@@ -12,10 +12,10 @@ def init_inv():
                 init_supplier()
                 init_hospital()
                 data_list = assign_supplier()
-                print("Inventory initiated")
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
                         f.write(f"{item_code[i]},{100},{data_list[i]}\n")
+                        print("Inventory initiated")
                 menu(utype)
             else:
                 utype = login()
@@ -45,8 +45,7 @@ def inv_update():
         for line in hlines:
             hospital_list.append(line.strip().split(","))
         for line in lines:
-            data = line.strip().split(",")
-            list_data.append(data)
+            list_data.append(line.strip().split(","))
         for c,ele in enumerate(list_data,1):
             print(f"{c}. {item_name[item_code.index(ele[0])]} - {ele[1]} Boxes")
         selection = int(input("Please enter item code number > "))
@@ -54,18 +53,19 @@ def inv_update():
         for c,ele in enumerate(list_data,1):
             item = item_name[item_code.index(ele[0])]
             itemcode = ele[0]
+            current_quantity = int(ele[1])
             supplier = ele[2]
             if selection == c:
                 match menu_select:
                     case 1:
-                        new_quantity = int(ele[1]) + quantity_to_change
+                        new_quantity = current_quantity + quantity_to_change
                         trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | {quantity_to_change}\n")
                     case 2:
-                        if int(ele[1]) == 0 or quantity_to_change > int(ele[1]):
+                        if current_quantity == 0 or quantity_to_change > current_quantity:
                             print("Insufficient for distribution")
                             inv_update()
                         else:
-                            new_quantity = int(ele[1]) - quantity_to_change
+                            new_quantity = current_quantity - quantity_to_change
                             for c,ele in enumerate(hospital_list[0],1):
                                 print(f"{c}.{ele}")
                             while True:
@@ -137,6 +137,7 @@ def inv_track():
         for c,line in enumerate(lines,1):
             data = line.strip().split(",")
             items_list.append(item_name[item_code.index(data[0].strip())])
+            print(items_list)
             quantity_list.append(int(data[1].strip()))
     while True:
         #Select an option from menu
@@ -258,7 +259,11 @@ def search_user():
 
 #Search Transactions.txt
 def search():
-    item_code,item_name = ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
+    item_list = readfiles("ppe.txt")
+    item_code,item_name = [], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
+    for item in item_list:
+        item_code.append(item[0])
+    print(item_code)
     while True:
         #Prompt user to select an option
         selection = (input("\tPlease select search option (Leave empty to quit):\n\t1. Distribution list\n\t2. Received list\n\t3. Specific Item\n\t4. All\n\t> "))
@@ -272,9 +277,6 @@ def search():
             continue
     #Read data from transactions.txt
     with open("transactions.txt","r") as f:
-        supplier_code = ["S1","S2","S3","S4"]
-        transaction_suppliercode = []
-        transaction_quantity = []
         lines = f.readlines()
         match selection:
             case 1:
@@ -291,10 +293,9 @@ def search():
                         print(data)
             case 3:
                 data_list = []
-                item_code, item_name = ["FS", "GL", "GW", "HC", "MS", "SC"], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
-                supplier_code = ["S1", "S2", "S3", "S4"]
-                hospital_code = ["H1", "H2", "H3", "H4"]
-                quantities = [0] * len(supplier_code)
+                supplier_code = readfiles("suppliers.txt")
+                hospital_code = readfiles("hospitals.txt")
+                quantities = [0] * len(supplier_code[0])
 
                 for c, ele in enumerate(item_code, 1):
                     print(f"{c}. {ele}")
@@ -311,19 +312,19 @@ def search():
                     case 1:
                         for data in data_list:
                             if data[1] == item_name[item_code_selection - 1]:
-                                supplier_index = supplier_code.index(data[2])
+                                supplier_index = supplier_code[0].index(data[2])
                                 quantities[supplier_index] += int(data[3])
-                        print(f"\n{item_name[item_code_selection - 1]}")
-                        for spcode,quantity in zip(supplier_code,quantities):
+                        print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
+                        for spcode,quantity in zip(supplier_code[1],quantities):
                             print(f"{spcode} = {quantity}")
                     
                     case 2:
                         for data in data_list:
                             if data[1] == item_name[item_code_selection - 1]:
-                                hospital_index = hospital_code.index(data[2])
+                                hospital_index = hospital_code[0].index(data[2])
                                 quantities[hospital_index] += int(data[3])
-                        print(f"\n{item_name[item_code_selection - 1]}")
-                        for hpcode,quantity in zip(hospital_code,quantities):
+                        print(f"Item: \n{item_name[item_code_selection - 1]} Type: {data_list[0]}")
+                        for hpcode,quantity in zip(hospital_code[1],quantities):
                             print(f"{hpcode} = {quantity}")
                     case _:
                         print("Invalid Selection")

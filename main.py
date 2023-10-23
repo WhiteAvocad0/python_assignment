@@ -14,7 +14,10 @@ def init_inv():
                 data_list = assign_supplier()
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
-                        f.write(f"{item_code[i]},{100},{data_list[i]}\n")
+                        quantity = input(f"Please enter quantity for {item_code[i]} (Leave empty for default (100)): ")
+                        if not quantity:
+                            quantity = 100
+                        f.write(f"{item_code[i]},{quantity},{data_list[i]}\n")
                         print("Inventory initiated")
                 menu(utype)
             else:
@@ -431,7 +434,7 @@ def menu(user_type):
     if user_type == "admin":
         print(f"\tINVENTORY MANAGEMENT SYSTEM (Admin)\n\t{'+'*34}")
         while True:
-            select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Update hospital\n\t9. Update supplier\n\t10. Backup\n> ")
+            select = input("\t1. Item Inventory Update\n\t2. Item Inventory Tracking\n\t3. Search distribution list\n\t4. Add new user\n\t5. Delete user\n\t6. Search user\n\t7. Modify User\n\t8. Update hospital\n\t9. Update supplier\n\t0. Logout\n> ")
             try:
                 #Check if user entered anythings other than number
                 select = int(select)
@@ -458,7 +461,7 @@ def menu(user_type):
                     update_hospital()
                 case 9:
                     update_supplier()
-                case 10:
+                case 0:
                     backup()
                 case _:
                     print("Invalid selection! Please try again.") 
@@ -489,30 +492,30 @@ def menu(user_type):
 def assign_supplier():
     item_name = ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
     data_list = []
+    #Open suppliers.txt
     with open("suppliers.txt", "r") as f:
         lines = f.readlines()
+        #Check if file is empty
         if len(lines) != 0:
             with open("ppe.txt","r") as f:
                 ppelines = f.readlines()
+                #Check is ppe.txt is empty
                 if len(ppelines) == 0:
                     splist = lines[0].strip().split(",")
                     spname = lines[1].strip().split(",")
-                    supplier_counts = [0] * len(spname)
-                    #data will become > [0,0,0,0]
-                    for i in range(6):
+                    #Loop 6 times
+                    for i in range(len(item_name)):
                         while True:
+                            #List out app item name for selection
                             for c, ele in enumerate(spname, 1):
                                 print(f"{c}. {ele}")
                             try:
+                                #Prompt user to select an item to make changes
                                 supplier_selection = int(input(f"Please select a supplier to supply {item_name[i]} > "))
+                                #Check is selection is valid
                                 if 1 <= supplier_selection <= len(spname):
-                                    if supplier_counts[supplier_selection - 1] < 2:
-                                        #data will become [1,0,0,0] when 1 is selected
-                                        data_list.append(splist[supplier_selection - 1])
-                                        supplier_counts[supplier_selection - 1] += 1
-                                        break
-                                    else:
-                                        print(f"{spname[supplier_selection - 1]} has already supplied two items. Please select another supplier.")
+                                    data_list.append(splist[supplier_selection - 1])
+                                    break
                                 else:
                                     print("Invalid supplier number. Please enter a valid number.")
                             except ValueError:
@@ -610,7 +613,7 @@ def update_hospital():
 def update_supplier():
     data_list = readfiles("suppliers.txt")
     while True:
-        selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add Supplier\n\t2. Change Supplier name\n\t3. Delete Supplier\n\t> ")
+        selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Change Supplier name\n\t> ")
         if not selection:
             return
         try:
@@ -620,12 +623,6 @@ def update_supplier():
             continue
         match selection:
             case 1:
-                if len(data_list[0]) == 4:
-                    print("Maximum suppliers is 4.")
-                else:
-                    data_list[0].append(f"S{len(data_list[1]) + 1}")
-                    data_list[1].append(input("Please enter supllier name: "))
-            case 2:
                 for c,ele in enumerate(data_list[1],1):
                     print(f"{c}. {ele}")
                 while True:
@@ -643,24 +640,6 @@ def update_supplier():
                     return
                 else:
                     data_list[1][selection-1] = new_name
-            case 3:
-                if len(data_list[0]) == 3:
-                    print("Minimum suppliers is 3")
-                else:
-                    for c,ele in enumerate(data_list[1],1):
-                        print(f"{c}. {ele}")
-                    while True:
-                        delete = input("Please select a supplier to delete: ")
-                        if not delete:
-                            return
-                        try:
-                            delete = int(delete)
-                            break
-                        except ValueError:
-                            print("Please enter only number!")
-                            continue
-                    data_list[1].pop(delete-1)
-                    data_list[0].pop()
             case _:
                 print("Please select a valid option")
         config_save("suppliers.txt","w",data_list)

@@ -98,10 +98,13 @@ def login():
     #Check if username match password
     while True:
         username,passwd = input("Please enter login credential (Leave empty to quit login):\n\tUsername: "), input("\tPassword: ")
+        #Check if the password is in the same column with the usernsme that the user entered
         if username in data_list[1] and passwd == data_list[2][data_list[1].index(username)]:
+            #Check user type by checking the same column with the username
             check_type = (data_list[3][data_list[1].index(username)])
             return check_type
-        elif username == "" and passwd == "":
+        #Check if input are empty
+        elif not username and not passwd:
             quit()
         else:
             print("Invalid credential. Please try again.")
@@ -334,8 +337,7 @@ def search():
                                             supplier_index = supplier_code[0].index(data[2])
                                             #Sum data into quantity specific index of quantity > [100,0,0,0]
                                             quantities[supplier_index] += int(data[4])
-                                            latest_date_time = data[3]
-                                    print(f"Item: {item_name[item_code_selection - 1]}, Lastest Time: {latest_date_time}")
+                                    print(f"Item: {item_name[item_code_selection - 1]}")
                                     for spcode,quantity in zip(supplier_code[1],quantities):
                                         print(f"From {spcode} = {quantity}")
                                     break
@@ -343,12 +345,19 @@ def search():
                         case 2:
                             #Find data that starts with distribute
                             for data in data_list:
+                                #Check if data starts wtih Distribute
                                 if data[0] == "Distribute":
+                                    #Loop through all data in data_list
                                     for data in data_list:
+                                        #Loop through data in data list and match data with selection
+                                        #Filter data with hospital code only
                                         if data[1] == item_name[item_code_selection - 1] and data[2][0] == "H":
+                                            #Find supplier index with
+                                            #Match the index of supplier
                                             hospital_index = hospital_code[0].index(data[2])
-                                            quantities[hospital_index] += int(data[3])
-                                    print(f"Item: {item_name[item_code_selection - 1]} Type: Distribute")
+                                            #Sum data into quantity specific index of quantity > [100,0,0,0]
+                                            quantities[hospital_index] += int(data[4])
+                                    print(f"Item: {item_name[item_code_selection - 1]}")
                                     for hpcode,quantity in zip(hospital_code[1],quantities):
                                         print(f"To {hpcode} = {quantity}")
                                     break
@@ -580,7 +589,6 @@ def init_hospital():
 
 #Modify hospital
 def update_hospital():
-    
     data_list = readfiles("hospitals.txt")
     while True:
         selection = input("\tPlease select an option (Leave empty to quit):\n\t1. Add hospital\n\t2. Change hospital name\n\t3. Delete hospital\n\t> ")
@@ -592,13 +600,17 @@ def update_hospital():
             print("Please enter only number!")
             continue
         match selection:
+            #Option 1 (Create new hosptial)
             case 1:
                 data_list[1].append(input("Please enter new hospital name: "))
+                #Create hospital code by adding 1 to existing numbers of hospital code
                 data_list[0].append(f"H{len(data_list[0])+1}")
+            #Option 2 (Update hospital name)
             case 2:
                 for c,ele in enumerate(data_list[0],1):
                     print(f"{c}. {ele}")
                 while True:
+                    #Input hospital name
                     select = input("Please select a hospital to update name > ")
                     try:
                         select = int(select)
@@ -606,8 +618,11 @@ def update_hospital():
                     except ValueError:
                         print("Please enter only numbers!")
                         continue
+                #Write new name into column of selected hospital
                 data_list[1][select-1] = input("Please enter new name: ")
+            #Option 3 (Delete hospital)
             case 3:
+                #Check if numbers of hospital is 3
                 if len(data_list[0]) == 3:
                     print("There must be minimum 3 hospital in system, unable to delete.")
                 for c,ele in enumerate(data_list[1],1):
@@ -620,8 +635,9 @@ def update_hospital():
                     except ValueError:
                         print("Please enter only number!")
                         continue
+                #Remove data from selected column
                 (data_list[1]).pop(delete-1)
-                (data_list[0]).pop()
+                (data_list[0]).pop(delete-1)
             
             case _:
                 print("Please select a valid option")

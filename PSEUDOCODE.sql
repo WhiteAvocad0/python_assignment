@@ -2,6 +2,7 @@ FUNCTION init_inv()
     DEFINE item_code AS a list ["FS", "GL", "GW", "HC", "MS", "SC"]
     DEFINE data_list AS list
     DEFINE utype AS STRING
+    DEFINE quantity AS INTEGER
     TRY
         OPEN "ppe.txt" IN READ mode AS f THEN
             IF ppe.txt IS EMPTY THEN
@@ -10,7 +11,11 @@ FUNCTION init_inv()
                 data_list = CALL FUNCTION assign_supplier()
                 WITH OPEN "ppe.txt" IN APPEND mode AS f THEN
                     FOR i IN RANGE LENGTH OF item_code THEN
-                        f.write {item_code[i]},{100},{data_list[i]}\n TO ppe.txt
+                        DISPLAY "Please enter quantity for {item_code[i]} (Leave empty for default (100)): "
+                        GET quantity
+                        IF quantity IS EMPTY THEN
+                            quantity = 100
+                        f.write {item_code[i]},{quantity},{data_list[i]}\n TO ppe.txt
                         DISPLAY "Inventory initiated"
                     END FOR
                 utype = CALL FUNCTION login()
@@ -26,96 +31,101 @@ FUNCTION init_inv()
 END FUNCTION
 
 FUNCTION inv_update()
-    DEFINE current_time AS DATE AND TIME WITH FORMAT "YYYY-MM-DD HH:MM:SS"
-    DEFINE item_code, item_name AS lists ["FS", "GL", "GW", "HC", "MS", "SC"], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
-    DEFINE hospital_list AS a list []
-    DEFINE select_data AS ["Receive","Distribute"]
-    DEFINE list_data, trans_data AS lists
-    DEFINE menu_select, current_quantity AS INTEGER
+    DEFINE item_code, item_name AS lists ["FS","GL","GW","HC","MS","SC"], ["Face Shield","Gloves","Gown","Head Cover","Mask","Shoe Covers"]
+    DEFINE hospital_list AS list
+    DEFINE list_data AS list
+    DEFINE trans_data AS list
+    DEFINE selection, quantity_to_change, to_hospital AS INTEGER
+
     WHILE TRUE THEN
-        DISPLAY "Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\t\n> "
-        GET menu_select
+        menu_select, select_data = INPUT("Please select an option (Leave empty to quit):\n1. Receive\n2. Distribute\n> "), ["Receive","Distribute"]
         IF menu_select IS EMPTY THEN
             RETURN
         END IF
         TRY
-            IS menu_select A DIGIT?
+            IS menu_select INTEGER?
             BREAK
-        EXCEPT menu_select IS NOT DIGIT THEN
+        EXCEPT menu_select IS INTEGER THEN
             DISPLAY "Please enter only numbers!"
             CONTINUE
         END TRY
     END WHILE
-        
-    OPEN "ppe.txt" AND "hospitals.txt"IN READ mode AS f AND hf THEN
-        hlines = hf.readlines()
-        lines = f.readlines()
-        FOR line IN lines THEN
-            APPEND ppe DATA WITH STRIPPED SPACE AND REMOVED "," TO hospital_list
-        FOR line IN lines THEN
-            APPEND hospital DATA WITH STRIPPED SPACE AND REMOVED "," to list_data
-        END FOR
 
-        FOR c AND ele IN ENUMERATE list_data AND START WITH 1 THEN
-            DISPLAY {c}. {item_name[item_code.index(ele[0])]} - {ele[1]} Boxes
-        END FOR
-        
-        DEFINE selection, quantity_to_change AS INTEGER
-        DISPLAY "Please enter item code number > "
-        GET selection
-        DISPLAY "Quantity to change > "
-        GET quantity_to_change
-        
-        FOR c AND ele IN ENUMERATE list_data AND START WITH 1 THEN
-            item = item_name[item_code.index(ele[0])]
-            itemcode = ele[0]
-            current_quantity = ele[1]
-            supplier = ele[2]
-            IF selection IS EQUAL c THEN
-                MATCH menu_select THEN
-                    menu_select IS 1 THEN
-                        new_quantity = current_quantity + quantity_to_change
-                        trans_line = {select_data[menu_select-1]} | {item} | {supplier} | {current_time} | +{quantity_to_change}
-                    menu_select IS 2 THEN
-                        IF current_quantity EQUALS 0 OR quantity_to_change LARGER THAN current_quantity THEN
-                            DISPLAY "Insufficient for distribution"
-                            CALL FUNCTION inv_update()
-                        ELSE THEN
-                            new_quantity = current_quantity - quantity_to_change
-                            FOR c AND ele IN ENUMERATE hospital_list[0] AND START WITH 1 THEN
-                                DISPLAY {c}.{ele}
-                            END FOR
-                            WHILE TRUE THEN
-                                DISPLAY "Distribute to hospital > "
-                                DEFINE to_hospital AS INTEGER
-                                TRY
-                                    to_hospital IS INTEGER
-                                    BREAK
-                                EXCEPT ValueError:
-                                    DISPLAY "Please enter a valid number!"
-                                    CONTINUE
-                            END WHILE
-                            trans_line = {select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | -{quantity_to_change}\n
-                    CASE _:
-                        DISPLAY "Invalid selection. Please try again."
-                END MATCH
-                       
-                list_data[IN LINE selection -1] = {itemcode},{new_quantity},{supplier}\n
-                APPEND trans_line to trans_data
-            END IF
-        END FOR
-        
-        OPEN "ppe.txt" IN WRITE mode AS f AND OPEN "transactions.txt" IN APPEND mode AS f THEN
-            WRITE list_data TO ppe.txt
-            WRITE trans_data TO transactions.txt WITH FORMAT (",",JOIN(trans_data)) 
-        CALL FUNCTION inv_update()
+    OPEN "ppe.txt" IN READ mode AS f AND OPEN "hospitals.txt" IN READ mode AS hf
+    READ all lines FROM f INTO lines
+    READ all lines FROM hf INTO hlines
+
+    FOR line IN hlines
+        APPEND line WITH STRIPPED AND REMOVE "," TO hospital_list
+    END FOR
+
+    FOR line IN lines
+        APPEND line WITH STRIPPED AND REMOVE "," TO list_data
+    END FOR
+
+    FOR c, ele IN ENUMERATE list_data AND START WITH 1
+        DISPLAY c, ". ", item name, " - ", quantity, " Boxes"
+    END FOR
+
+    DISPLAY "Please enter item code number > "
+    GET selection
+    DISPLAT"Quantity to change > "
+    GET quantity_to_change
+
+    FOR c, ele IN ENUMERATE list_data AND START WITH 1
+        item = MATCH item name in item_name LIST
+        itemcode = ele[0]
+        current_quantity = ele[1]
+        supplier = ele[2]
+
+        IF selection IS EQUAL TO c THEN
+            MATCH menu_select
+                CASE 1 THEN
+                    new_quantity = current_quantity + quantity_to_change
+                    trans_line = {select_data[menu_select-1]} | {item} | {supplier} | {current_time} | {quantity_to_change}\n
+                CASE 2 THEN
+                    IF current_quantity IS EQUAL TO 0 OR quantity_to_change BIGGER THAN current_quantity THEN
+                        DISPLAY "Insufficient for distribution"
+                        CALL FUNCTION inv_update()
+                    ELSE
+                        new_quantity = current_quantity - quantity_to_change
+                        FOR c, ele IN ENUMERATE hospital_list[0] AND START WITH 1
+                            DISPLAY c, ".", ele
+                        END FOR
+
+                        WHILE TRUE THEN
+                            DISPLAY "Distribute to hospital > "
+                            GET to_hospital
+                            TRY
+                                IS to_hospital INTEGER?
+                                BREAK
+                            EXCEPT to_hospital IS NOT INTEGER
+                                DISPLAY "Please enter only numbers!"
+                                CONTINUE
+                            END TRY
+                        END WHILE
+                        trans_line = {select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | {quantity_to_change}\n
+                    END IF
+                CASE NONE THEN
+                    DISPLAY "Invalid selection. Please try again."
+            END MATCH
+            list_data[selection - 1] = {itemcode},{new_quantity},{supplier}\n
+            APPEND trans_line TO trans_data
+        END IF
+    END FOR
+
+    OPEN "ppe.txt" IN WRITE mode AS pf AND OPEN "transactions.txt" IN APPEND mode AS tf
+    WRITE list_data TO ppe.txt
+    WRITE JOIN(trans_data, "\n") TO transactions.txt
+    DISPLAY f"Inventory updated> {item_name[selection-1]} = {new_quantity} Boxes"
+    CALL FUNCTION inv_update()
 END FUNCTION
 
 FUNCTION login()
     DEFINE data_list AS a list
+    DEFINE username, passwd, check_type AS STRING
     data_list = CALL FUNCTION readfiles("users.txt")        
     WHILE TRUE THEN
-        DEFINE username, passwd AS STRING
         DISPLAY "Please enter login credential (Leave empty to quit login):\n\tUsername: "
         GET username
         DISPLAY "\tPassword: "
@@ -136,10 +146,10 @@ END FUNCTION
 
 FUNCTION register()
     DEFINE data_list AS list
-    DEFINE username AS INTEGER  
+    DEFINE username, password AS STRING 
     data_list = CALL FUNCTION readfiles("users.txt")
 
-    FOR EACH c AND uid IN ENUMERATE data_list[0] AND START WITH 1 THEN
+    FOR EACH c AND uid IN ENUMERATE UID AND START WITH 1 THEN
         last_id = c
     END FOR
 
@@ -154,7 +164,7 @@ FUNCTION register()
     data_list[0].append("uid" + LAST ID AVAILABLE IN CURRENT UID DATA)
     data_list[1].append(username)
     data_list[2].append(DISPLAY "Password: ", GET passwd)
-    data_list[3].append(DISPLAY "Account Type (admin/staff): ", GET user_type).LOWERCASE()
+    data_list[3].append(DISPLAY "Account Type (admin/staff): ", GET user_type) IN LOWERCASE
 
     CALL FUNCTION config_save("users.txt", "w", data_list)
     DISPLAY "New user added"
@@ -168,8 +178,8 @@ FUNCTION inv_track()
     READ all lines FROM f INTO lines
     
     FOR c AND line IN ENUMERATE LINES AND START WITH 1 THEN
-        data = SPLIT line BY COMMA
-        APPEND ITEM NAME TO items_list
+        data = LINE WITH STRIPPED SPACE AND REMOVED ","
+        APPEND ITEM NAME INTO items_list
         APPEND QUANTITY TO quantity_list
     
     WHILE TRUE THEN
@@ -184,56 +194,55 @@ FUNCTION inv_track()
         IF selection IS EMPTY THEN
             RETURN
         END IF
-
         TRY
-            IS selection INTEGER THEN
-        EXCEPT selection IS NOT INTEGER
+            IS selection INTEGER?
+        EXCEPT selection IS INTEGER
             DISPLAY "Please enter a number"
             CONTINUE
         END TRY
 
         MATCH selection
-            selection IS 1 THEN
+            CASE 1 THEN
                 DISPLAY "Quantity of all items:"
-                FOR EACH item, quantity IN items_list, quantity_list
+                FOR item AND quantity IN items_list AND quantity_list
                     DISPLAY item, " = ", quantity
                 END FOR
-            selection IS 2 THEN
+            CASE 2 THEN
                 DISPLAY "Items with less than 25 boxes:"
-                FOR EACH item, quantity IN items_list, quantity_list
+                FOR item AND quantity IN items_list AND quantity_list
                     IF quantity LESS THAN 25 THEN
                         DISPLAY item, " = ", quantity
                     END IF
                 END FOR
             selection IS 3 THEN
                 DISPLAY "Select an item:"
-                FOR c, ele IN ENUMERATE item_name AND START WITH 1 THEN
+                FOR c AND ele IN ENUMERATE item_name AND START WITH 1 THEN
                     DISPLAY c, ". ", ele
                 END FOR
                 GET item_selection
-                FOR EACH item, quantity IN items_list, quantity_list
+                FOR EACH item AND quantity IN items_list AND quantity_list
                     IF item IS EQUAL TO SELECTED item_name THEN
                         DISPLAY item, " = ", quantity
                     END IF
                 END FOR
-            selection IS 4 THEN
+            CASE 4 THEN
                 DEFINE transactions_list, date_list, time_list AS lists
                 OPEN "transactions.txt" IN READ mode AS tf
                 READ all lines FROM tf INTO lines
                 
-                FOR EACH line IN lines
-                    data = SPLIT line BY " | "
-                    transactions_data = line
-                    date_data = SPLIT data[3] BY SPACE
+                FOR line IN lines
+                    data = line REMOVED " | "
+                    transactions_data = line WITH STRIPPED SPACE
+                    date_data = date AND time WITH STRIPPED SPACE
                     IF transactions_data STARTSWITH "Receive" THEN
-                        APPEND date_data[0] TO date_list
-                        APPEND date_data[1] TO time_list
+                        APPEND TYPE TO date_list
+                        APPEND ITEM NAME TO time_list
                         APPEND transactions_data TO transactions_list
                     END IF
                 END FOR
                 
                 DISPLAY "Date & time of received items:"
-                FOR c, (date_ele, time_ele) IN ENUMERATE date_list, time_list AND START WITH 1
+                FOR c, (date_ele, time_ele) IN ENUMERATE ZIP(date_list, time_list) AND START WITH 1
                     DISPLAY c, ". ", date_ele, " ", time_ele
                 END FOR
 
@@ -251,44 +260,42 @@ FUNCTION inv_track()
     END WHILE
 END FUNCTION
 
-
-FUNCTION delete_user()
+FUNCTION delete_user(user_type)
     DEFINE data_list AS a list
     DEFINE selection AS INTEGER
+    OPEN "users.txt" IN READ mode AS f
+    READ all lines FROM f INTO lines
 
-    WITH OPEN "users.txt" IN READ mode AS f THEN
-        lines = f.readlines()
+    FOR c AND ele IN ENUMERATE UID AND 1:
+        DISPLAY c, ".", ele
+    END FOR
         
-        FOR EACH line IN lines THEN
-            APPEND line.strip().split(",") TO data_list
-        END FOR
-        
-        FOR EACH c, ele IN ENUMERATE data_list[1] AND 1:
-            DISPLAY c, ".", ele
-        END FOR
-        
-        WHILE TRUE THEN
-            DISPLAY "Select the user you want to remove (Leave empty to quit) > "
-            GET selection
-            IF selection IS EMPTY THEN
-                RETURN
-            END IF
-            TRY
-                selection IS INTEGER
-                BREAK
-            EXCEPT ValueError THEN
-                DISPLAY "Please enter only a number!"
-                CONTINUE
-            END TRY
-        END WHILE
-        
-        data_list[0].pop()
+    WHILE TRUE THEN
+        DISPLAY "Select the user you want to remove (Leave empty to quit) > "
+        GET selection
+        IF selection IS EMPTY THEN
+            RETURN
+        END IF
+        TRY
+            selection IS INTEGER
+            BREAK
+        EXCEPT selection IS INTEGER
+            DISPLAY "Please enter only a number!"
+            CONTINUE
+        END TRY
+    END WHILE
+    IF SELECTED USERNAME IS CURRENTLY LOGGED IN USER THEN
+        DISPLAY "Unable to delete currently logged in user!"
+        CALL delete_user(user_type)
+    ELSE THEN
+        UID.pop()
         FOR i IN RANGE 3:
             data_list[i+1].pop(selection-1)
-        END FOR
-        
-        CALL FUNCTION config_save("users.txt", "w", data_list[0], data_list[1], data_list[2], data_list[3])
-    END WITH
+            SELECTED usernme.pop()
+            SELECTED password.pop()
+            SELECTED usertype.pop()
+        CALL FUNCTION config_save("users.txt", "w", data_list)
+        CALL FUNCTION delete_user(user_type)   
 
     CALL FUNCTION delete_user()
 END FUNCTION
@@ -296,43 +303,37 @@ END FUNCTION
 FUNCTION search_user(fileName, mode)
     DEFINE data_list AS a list
     DEFINE selection AS INTEGER
+    OPEN "users.txt" IN READ mode AS f
+    READ all lines FROM f INTO lines
 
-    WITH OPEN fileName IN mode AS f THEN
-        lines = f.readlines()
+    FOR c AND ele IN ENUMERATE USERNAME AND 1:
+        DISPLAY c, ".", ele
+    END FOR
 
-        FOR EACH line IN lines THEN
-            APPEND line.strip().split(",") TO data_list
-        END FOR
-
-        FOR EACH c, ele IN ENUMERATE data_list[1] AND 1:
-            DISPLAY c, ".", ele
-        END FOR
-
-        WHILE TRUE THEN
-            DISPLAY "Please select a user to search (Leave empty to quit)"
-            GET selection
-            IF selection IS EMPTY THEN
-                RETURN
+    WHILE TRUE THEN
+        DISPLAY "Please select a user to search (Leave empty to quit)"
+        GET selection
+        IF selection IS EMPTY THEN
+            RETURN
+        END IF
+        TRY
+            IS selection INTEGER?
+            IF selection IS BIGGER THAN AVAILABLE NUMBERS OF USERNAME THEN
+                DISPLAY "Please select a valid option!"
+            ELSE THEN
+                selected_user = data_list[1][selection-1]
+                DISPLAY "Selected user:", selected_user
+                DISPLAY "Username:", selected_user
+                DISPLAY "UID:", data_list[0][selection-1]
+                DISPLAY "Password:", data_list[2][selection-1]
+                DISPLAY "Type:", data_list[3][selection-1]
             END IF
-            TRY
-                selection IS INTEGER
-                IF selection > length of data_list[1] THEN
-                    DISPLAY "Please select a valid option!"
-                ELSE
-                    selected_user = data_list[1][selection-1]
-                    DISPLAY "Selected user:", selected_user
-                    DISPLAY "Username:", selected_user
-                    DISPLAY "UID:", data_list[0][selection-1]
-                    DISPLAY "Password:", data_list[2][selection-1]
-                    DISPLAY "Type:", data_list[3][selection-1]
-                END IF
-                BREAK
-            EXCEPT ValueError THEN
-                DISPLAY "Please enter only a number!"
-                CONTINUE
-            END TRY
-        END WHILE
-    END WITH
+            BREAK
+        EXCEPT selection IS INTEGER
+            DISPLAY "Please enter only a number!"
+            CONTINUE
+        END TRY
+    END WHILE
 
     CALL FUNCTION search_user("users.txt", "r")
 END FUNCTION

@@ -77,7 +77,7 @@ def inv_update():
                                     to_hospital = int(to_hospital)
                                     break
                                 except ValueError:
-                                    print("Please valid number!")
+                                    print("Please enter only number!")
                                     continue
                         trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | {quantity_to_change}\n") 
                     case _:

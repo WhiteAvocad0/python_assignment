@@ -1,2 +1,2 @@
 S1,S2,S3,S4
-AMD,Intel,NVIDIA,Apple
+Apple,AMD,NVIDIA,Intel

@@ -339,7 +339,7 @@ END FUNCTION
 FUNCTION search()
     item_list = CALL FUNCTION readfiles("ppe.txt")
     DEFINE item_code, item_name AS LIST [], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
-    DEFINE selection AS INTEGER
+    DEFINE selection, item_code_selection, type_selection, current_quantity AS INTEGER
     FOR item IN item_list
         APPEND item[FIRST ITEM] TO item_code
     
@@ -352,7 +352,7 @@ FUNCTION search()
             IS selection INTEGER?
             BREAK
         EXCEPT selection IS NOT INTEGER
-            PRINT "Please enter only numbers!"
+            DISPLAY "Please enter only numbers!"
             CONTINUE
         END TRY
 
@@ -361,196 +361,189 @@ FUNCTION search()
 
             MATCH selection
                 CASE 1 THEN
-                    PRINT "Distribution list:"
-                    FOR EACH line IN lines
-                        data = line.STRIPPED
+                    DISPLAY "Distribution list:"
+                    FOR line IN lines
+                        data = line WITH SPACE STRIPPED 
                         IF data STARTSWITH "Distribute" THEN
-                            PRINT data
+                            DISPLAY data
                         END IF
                     END FOR
                 CASE 2 THEN
-                    PRINT "Received list:"
-                    FOR EACH line IN lines
-                        data = line.STRIPPED
+                    DISPLAY "Received list:"
+                    FOR line IN lines
+                        data = line WITH SPACE STRIPPED
                         IF data STARTSWITH "Receive" THEN
-                            PRINT data
+                            DISPLAY data
                         END IF
                     END FOR
                 CASE 3 THEN
-                    data_list = []
+                    DEFINE data_list AS LIST
                     supplier_code = CALL FUNCTION readfiles("suppliers.txt")
                     hospital_code = CALL FUNCTION readfiles("hospitals.txt")
                     quantities = [0] * LENGTH OF supplier_code[0]
-                    item_code_selection = -1
 
-                    FOR c, ele IN ENUMERATE item_code AND START WITH 1
-                        PRINT f"{c}. {item_name[ele - 1]}"
+                    FOR c AND ele IN ENUMERATE item_code AND START WITH 1
+                        DISPLAY {c}. {item_code}
                     END FOR
 
-                    item_code_selection = CONVERT INPUT("Please select an item: ") TO INTEGER
+                    DISPLAY "Please select an item: "
+                    GET item_code_selection
+                    OPEN "transactions.txt" IN READ mode AS f
+                    READ all lines FROM f INTO lines
+                        FOR line in lines THEN
+                            data = line WITH SPACE STRIPPED AND " | " REMOVED
+                            APPEND data INTO data_list
+                            current_quantity = data[4]
+                    DISPLAY "Please select an option:\n1. Receive\n2. Distribute\n> "
+                    GET type_selection
                     IF LENGTH OF lines EQUALS 0 THEN
-                        PRINT "No transaction found!"
-                    ELSE
-                        type_selection = CONVERT INPUT("Please select an option:\n1. Receive\n2. Distribute\n> ") TO INTEGER
-                        
+                        DISPLAY "No transaction found!"
+                    ELSE THEN
                         MATCH type_selection
                             CASE 1 THEN
-                                FOR EACH data IN data_list
-                                    IF data[0] EQUALS "Receive" AND data[1] EQUALS item_name[item_code_selection - 1] AND data[2][0] EQUALS "S" THEN
+                                FOR data IN data_list
+                                    IF data[0] EQUALS "Receive" AND data[1] EQUALS item name AND data[2][0] EQUALS "S" THEN
                                         supplier_index = INDEX OF data[2] IN supplier_code[0]
-                                        quantities[supplier_index] += CONVERT data[4] TO INTEGER
+                                        quantities[supplier_index] += item_exist_quantity
                                     END IF
                                 END FOR
-                                PRINT f"Item: {item_name[item_code_selection - 1]}"
-                                FOR EACH spcode, quantity IN ZIP(supplier_code[1], quantities)
-                                    PRINT f"From {spcode} = {quantity}"
+                                DISPLAY Item: {item name}
+                                FOR spcode AND quantity IN ZIP(supplier_code[1] AND quantities)
+                                    DISPLAY "From" + {spcode} = {quantity}
                                 END FOR
                             CASE 2 THEN
-                                FOR EACH data IN data_list
-                                    IF data[0] EQUALS "Distribute" AND data[1] EQUALS item_name[item_code_selection - 1] AND data[2][0] EQUALS "H" THEN
+                                FOR data IN data_list
+                                    IF data[0] EQUALS "Distribute" AND data[1] EQUALS item_name AND data[2][0] EQUALS "H" THEN
                                         hospital_index = INDEX OF data[2] IN hospital_code[0]
-                                        quantities[hospital_index] += CONVERT data[4] TO INTEGER
+                                        quantities[hospital_index] += current_quantity
                                     END IF
                                 END FOR
-                                PRINT f"Item: {item_name[item_code_selection - 1]}"
+                                DISPLAY f"Item: {item_name[item_code_selection - 1]}"
                                 FOR EACH hpcode, quantity IN ZIP(hospital_code[1], quantities)
-                                    PRINT f"To {hpcode} = {quantity}"
+                                    DISPLAY f"To {hpcode} = {quantity}"
                                 END FOR
                             CASE _:
-                                PRINT "No data found!"
+                                DISPLAY "No data found!"
                         END MATCH
                     END IF
                 CASE 4 THEN
-                    PRINT "All Transactions:"
-                    FOR EACH line IN lines
-                        data = line.STRIPPED
-                        PRINT data
+                    DISPLAY "All Transactions:"
+                    FOR line IN lines
+                        data = line WITH SPACE STRIPPED
+                        DISPLAY data
                     END FOR
                 CASE _:
-                    PRINT "Invalid selection! Please try again."
+                    DISPLAY "Invalid selection! Please try again."
             END MATCH
         END WITH
     END WHILE
 END FUNCTION
 
-
 FUNCTION modify_user()
-    DEFINE data_list AS list
+    data_list = CALL FUNCTION readfiles("users.txt")
     DEFINE selection, modify_item, new_type AS INTEGER
     DEFINE new_password, new_username AS STRING
-    WITH OPEN "users.txt" IN READ mode AS f THEN
-        lines = f.readlines()
-        FOR EACH line IN lines THEN
-            data_list.append(line.strip().split(","))
+    WHILE TRUE THEN
+        FOR c AND ele IN ENUMERATE username AND 1 THEN
+            DISPLAY {c}. {ele} 
         END FOR
+        
+        DISPLAY "Please select an user to modify (Leave empty to quit)\n> "
+        GET selection
+        IF selection IS EMPTY THEN
+            RETURN
+        END IF
 
-        WHILE TRUE THEN
-            FOR EACH c, ele IN ENUMERATE data_list[1], 1 THEN
-                DISPLAY {c}. {ele} 
-            END FOR
+        TRY
+            IS selection INTEGER?
+            IF selection INPUT LARGER THAN LENGTH OF data_list[1] THEN
+                DISPLAY "Please select a valid option!"
+            ELSE THEN
+                WHILE TRUE THEN
+                    DISPLAY "Please select an item to modify (Leave empty to quit):"
+                    DISPLAY "1. Username"
+                    DISPLAY "2. Password"
+                    DISPLAY "3. User Type"
+                    GET modify_item
+                    IF modify_item IS EMPTY THEN
+                        RETURN
+                    END IF
+                    TRY
+                        IS modify_item INTEGER?
+                        MATCH modify_item THEN
+                            CASE 1 THEN
+                                WHILE TRUE THEN
+                                    DISPLAY f"Please enter a new username"
+                                    DISPLAY f"Current username: {data_list[1][selection-1]}"
+                                    GET new_username
+                                    IF new_username IS EMPTY THEN
+                                        DISPLAY "Username cannot be empty. Please enter a valid username."
+                                    ELSE IF new_username IN data_list[1] THEN
+                                        DISPLAY "Username already exists. Please choose a different one."
+                                    ELSE THEN
+                                        SELECTED USERNAME ROW = new_username
+                                        BREAK
+                                    END IF
+                                END WHILE
+                            CASE 2 THEN
+                                WHILE TRUE THEN
+                                    DISPLAY "Please enter a new password"
+                                    DISPLAY "Current password: {data_list[2][selection-1]}"
+                                    GET new_password
 
-            GET selection
-            IF selection IS EMPTY THEN
-                RETURN
+                                    IF new_password IS EMPTY THEN
+                                        DISPLAY "Password cannot be empty. Please enter a valid password."
+                                    ELSE
+                                        SELECTED PASSWORD ROW = new_password
+                                        BREAK
+                                    END IF
+                                END WHILE
+                            CASE 3 THEN
+                                WHILE TRUE THEN
+                                    DISPLAY "Please enter a new user type"
+                                    DISPLAY "Current user type: {data_list[3][selection-1]}"
+                                    DISPLAY "New user type (1. Admin / 2. Staff):"
+                                    GET new_type
+
+                                    IF new_type IS EMPTY THEN
+                                        DISPLAY "User type cannot be empty. Please select a valid option."
+                                    ELSE
+                                        TRY
+                                            IS new_type INTEGER?
+                                            MATCH new_type THEN
+                                                CASE 1 THEN
+                                                    new_type = "admin"
+                                                    SELECTED USER TYPE = new_type
+                                                CASE 2 THEN
+                                                    new_type = "staff"
+                                                    SELECTED USER TYPE = new_type
+                                                CASE NOT 1 OR 2 THEN
+                                                    DISPLAY "Please select a valid option."
+                                            END MATCH
+                                            BREAK
+                                        EXCEPT new_type IS NOT INTEGER
+                                            DISPLAY "Please enter only numbers!"
+                                        END TRY
+                                    END IF
+                                END WHILE
+                            CASE _:
+                                DISPLAY "Invalid selection! Please try again."
+                                CALL FUNCTION modify_user()
+                        END MATCH
+
+                        config_save("users.txt", "w", data_list)
+                        DISPLAY "---------------------Done---------------------"
+                        RETURN
+
+                    EXCEPT ValueError THEN
+                        DISPLAY "Please enter only numbers!"
+                    END TRY
+                END WHILE
             END IF
-
-            TRY
-                selection IS INTEGER
-                IF selection > LENGTH(data_list[1]) THEN
-                    DISPLAY "Please select a valid option!"
-                ELSE THEN
-                    WHILE TRUE THEN
-                        DISPLAY "Please select an item to modify (Leave empty to quit):"
-                        DISPLAY "1. Username"
-                        DISPLAY "2. Password"
-                        DISPLAY "3. User Type"
-
-                        GET modify_item
-
-                        IF modify_item IS EMPTY THEN
-                            RETURN
-                        END IF
-
-                        TRY
-                            modify_item IS INTEGER
-                            MATCH modify_item THEN
-                                CASE 1 THEN
-                                    WHILE TRUE THEN
-                                        DISPLAY f"Please enter a new username"
-                                        DISPLAY f"Current username: {data_list[1][selection-1]}"
-                                        GET new_username
-
-                                        IF new_username IS EMPTY THEN
-                                            DISPLAY "Username cannot be empty. Please enter a valid username."
-                                        ELIF new_username IN data_list[1] THEN
-                                            DISPLAY "Username already exists. Please choose a different one."
-                                        ELSE THEN
-                                            data_list[1][selection-1] = new_username
-                                            BREAK
-                                        END IF
-                                    END WHILE
-                                CASE 2 THEN
-                                    WHILE TRUE THEN
-                                        DISPLAY f"Please enter a new password"
-                                        DISPLAY f"Current password: {data_list[2][selection-1]}"
-                                        GET new_password
-
-                                        IF new_password IS EMPTY THEN
-                                            DISPLAY "Password cannot be empty. Please enter a valid password."
-                                        ELSE
-                                            data_list[2][selection-1] = new_password
-                                            BREAK
-                                        END IF
-                                    END WHILE
-                                CASE 3 THEN
-                                    WHILE TRUE THEN
-                                        # Modify user type (admin or staff)
-                                        DISPLAY f"Please enter a new user type"
-                                        DISPLAY f"Current user type: {data_list[3][selection-1]}"
-                                        DISPLAY "New user type (1. Admin / 2. Staff):"
-
-                                        GET new_type
-
-                                        IF new_type IS EMPTY THEN
-                                            DISPLAY "User type cannot be empty. Please select a valid option."
-                                        ELSE
-                                            TRY
-                                                new_type IS INTEGER
-                                                MATCH new_type THEN
-                                                    CASE 1 THEN
-                                                        new_type = "admin"
-                                                        data_list[3][selection-1] = new_type
-                                                    CASE 2 THEN
-                                                        new_type = "staff"
-                                                        data_list[3][selection-1] = new_type
-                                                    CASE NOT 1 OR 2 THEN
-                                                        DISPLAY "Please select a valid option."
-                                                END MATCH
-                                                BREAK
-                                            EXCEPT ValueError THEN
-                                                DISPLAY "Please enter only numbers!"
-                                            END TRY
-                                        END IF
-                                    END WHILE
-                                CASE _:
-                                    DISPLAY "Invalid selection! Please try again."
-                                    CALL FUNCTION modify_user()
-                            END MATCH
-
-                            config_save("users.txt", "w", data_list[0], data_list[1], data_list[2], data_list[3])
-                            DISPLAY "---------------------Done---------------------"
-                            RETURN
-
-                        EXCEPT ValueError THEN
-                            DISPLAY "Please enter only numbers!"
-                        END TRY
-                    END WHILE
-                END IF
-            EXCEPT ValueError THEN
-                DISPLAY "Please enter only numbers!"
-            END TRY
-        END WHILE
-    END WITH
+        EXCEPT selection IS NOT INTEGER
+            DISPLAY "Please enter only numbers!"
+        END TRY
+    END WHILE
 END FUNCTION
 
 FUNCTION menu(user_type)
@@ -570,7 +563,7 @@ FUNCTION menu(user_type)
             DISPLAY "8. Logout"
             GET selection
             TRY
-                SELECT IS INTEGER
+                is selection IS INTEGER
             EXCEPT ValueError THEN
                 DISPLAY "Please enter only numbers!"
                 CONTINUE
@@ -591,7 +584,11 @@ FUNCTION menu(user_type)
                 CASE 7 THEN
                     CALL FUNCTION modify_user()
                 CASE 8 THEN
-                    CALL FUNCTION quit()
+                    CALL FUNCTION update_hospital()
+                CASE 9 THEN 
+                    CALL FUNCTION update_supplier()
+                CASE 0 THEN
+                    CALL FUNCTION backup()
                 CASE NOT 1 TO 9 THEN
                     DISPLAY "Invalid selection! Please try again."
             END MATCH
@@ -619,7 +616,7 @@ FUNCTION menu(user_type)
             CASE 3 THEN
                 CALL FUNCTION search()
             CASE 4 THEN
-                CALL FUNCTION quit()
+                CALL FUNCTION backup()
             CASE NOT 1 TO 4 THEN
                 CALL FUNCTION DISPLAY "Invalid selection! Please try again."
         END MATCH
@@ -630,62 +627,50 @@ FUNCTION assign_supplier()
     DEFINE data_list AS list
     DEFINE supplier_selection AS INTEGER
     WITH OPEN "suppliers.txt" IN READ mode AS f THEN
-        lines = f.readlines()
-        
+    READ all lines IN f INTO line
         IF length of lines is NOT EQUAL TO 0 THEN
             WITH OPEN "ppe.txt" IN READ mode AS f THEN
-                ppelines = f.readlines()
+                READ all lines IN f INTO ppelines
                 
                 IF length of ppelines is EQUAL TO 0 THEN
-                    splist = split lines[0] by ","
-                    spname = split lines[1] by ","
-                    supplier_counts = CREATE a list containing 0s with the same length as spname
-                    
+                    splist = lines[0] WITH SPACE STRIPPED AND "," REMOVED
+                    spname = lines[1] WITH SPACE STRIPPED AND "," REMOVED
                     FOR i IN RANGE 6 THEN
                         WHILE TRUE THEN
                             FOR c AND ele IN ENUMERATE spname AND 1 THEN
                                 DISPLAY {c}. {ele}
-                            
+                            supplier_selection = DISPLAY "Please select a supplier to supply {item_name[i]} > "
+                            GET supplier_selection
                             TRY
-                                supplier_selection = DISPLAY "Please select a supplier to supply {item_name[i]} > "
-                                GET supplier_selection
-                                IF 1 SMALLER THAN AND EQUALS supplier_selection SMALLER THAN AND EQUALS length of spname THEN
-                                    IF supplier_counts[supplier_selection - 1] SMALLER THAN 2 THEN
-                                        data_list.append(splist[supplier_selection - 1])
-                                        supplier_counts[supplier_selection - 1] INCREASE BY 1
-                                        BREAK
-                                    ELSE:
-                                        DISPLAY f"{spname[supplier_selection - 1]} has already supplied two items. Please select another supplier."
-                                ELSE:
-                                    DISPLAY "Invalid supplier number. Please enter a valid number."
+                                IS supplier_selection INTEGER?
+                                BREAK
                                 
-                            EXCEPT ValueError:
+                            EXCEPT supplier_selection IS NOT INTEGER
                                 DISPLAY "Please enter a valid number."
+                                CONTINUE
+                        APPEND supplier code INTO data_list
                         END WHILE
                 END IF
-            END WITH
         ELSE THEN
             DISPLAY "Suppliers assigned"
         END IF
     RETURN data_list
-END UNCTION
+END FUNCTION
 
 FUNCTION init_supplier()
     DEFINE supplier_code, supplier_data AS list
     DEFINE supplier_name AS STRING
 
     WITH OPEN "suppliers.txt" IN READ mode AS f:
-        lines = f.readlines()
-        
+    READ all lines OF f INTO lines
         IF length of lines is EQUAL TO 0 THEN
             DISPLAY "Setup wizard"
             DISPLAY "Require at least four suppliers! (Not changeable)"
-            
             WHILE length of supplier_data < 4:
                 DISPLAY "Please enter supplier" {length of supplier_data + 1} "name >"
                 GET supplier_name
                 APPEND supplier_name TO supplier_data
-                sp_code = f"S{length of supplier_data}"
+                sp_code = "S" + {length of supplier_data}
                 APPEND sp_code TO supplier_code
             
             WITH OPEN "suppliers.txt" IN WRITE mode AS f:
@@ -696,17 +681,30 @@ FUNCTION init_supplier()
         END IF
 END FUNCTION
 
-FUNCTION update_hospital():
-    data_list = []
-    DEFINE selection, select, delete, new_name, new_hospital_name AS INTEGER
-    WITH OPEN "hospitals.txt" IN READ mode AS f THEN
-        lines = f.readlines()
-        FOR EACH line IN lines:
-            # Append hospital data after splitting by comma
-            APPEND line.strip().split(",") TO data_list
+FUNCTION init_hospital()
+    DEFINE data_list, code_list, name_list AS LIST
+    DEFINE name_list_input AS STRING
+    WITH OPEN "hospitals.txt" IN READ MODE AS f
+    READ all lines OF f INTO lines
+    FOR line IN LINES
+        APPEND line WITH SPACE STRIPPED AND "," REMOVED INTO data_list
+    IF LENGTH OF line IS 0 THEN
+        FOR I IN RANGE(3)
+            DISPLAY "There should be minimum of three hospital" + Current: {len(name_list)+1})\n + "Please enter hospital {i+1} name: "
+            GET name_list_input
+            APPEND name_list_input INTO name_list
+            APPEND ("H" + {LENGTH OF name_list}) INTO code_list
+            WITH OPEN "hospitals.txt" IN WRITE MODE AS file
+                WRITE ".".JOIN(code_list) + "\n" INTO f
+                WRITE ".".JOIN(name_list) INTO f
+        END FOR
+    END IF
+END FUNCTION
 
-    WHILE TRUE:
-        
+FUNCTION update_hospital():
+    data_list = CALL FUNCTION readfiles("hospitals.txt")
+    DEFINE selection, select, delete, new_name, new_hospital_name AS INTEGER
+    WHILE TRUE THEN
         DISPLAY "\tPlease select an option (Leave empty to quit):\n"
         DISPLAY "\t1. Add hospital\n"
         DISPLAY "\t2. Change hospital name\n"
@@ -716,23 +714,24 @@ FUNCTION update_hospital():
         IF selection IS EMPTY THEN
             RETURN
         TRY
-            IS selection INTEGER? THEN
+            IS selection INTEGER?
+            BREAK
+        EXCEPT selection IS NOT INTEGER THEN
             DISPLAY "Please enter only numbers!"
             CONTINUE 
         END IF
 
         MATCH selection THEN
             CASE 1 THEN
-                # Add a new hospital
                 DISPLAY "Please enter the new hospital name: "
                 GET new_hospital_name
                 data_list[1].APPEND(new_hospital_name)
-                data_list[0].APPEND(H + LENGTH OF data_list[0] + 1)
+                data_list[0].APPEND("H" + {LENGTH OF hospital code} + 1)
 
             CASE 2 THEN
-                FOR EACH c, ele IN ENUMERATE data_list[0], 1:
-                    DISPLAY f"{c}. {ele}"  # Display the hospital codes
-                WHILE TRUE:
+                FOR c AND ele IN ENUMERATE hospital code, 1:
+                    DISPLAY {c}. {ele}
+                WHILE TRUE THEN
                     DISPLAY "Please select a hospital to update name > "
                     GET select
                     TRY
@@ -743,7 +742,7 @@ FUNCTION update_hospital():
                         CONTINUE
                     DISPLAY "Please enter the new name: "
                     GET new_name
-                    data_list[1][select - 1] = new_name
+                    SELECTED HOSPITAL NAME = new_name
                 END WHILE
                 END FOR 
 
@@ -751,15 +750,15 @@ FUNCTION update_hospital():
                 IF LENGTH OF data_list index 0 IS 3 THEN
                     DISPLAY "There must be a minimum of 3 hospitals in the system. Unable to delete."
                 ELSE:
-                    FOR EACH c, ele IN ENUMERATE data_list[1], 1:
+                    FOR c AND ele IN ENUMERATE hospital code, 1:
                         DISPLAY {c}. {ele}
                     WHILE TRUE THEN
                         DISPLAY "Please select a hospital to delete > "
                         GET delete
                         TRY
-                            IS delete INTEGER? THEN
+                            IS delete INTEGER? 
                             BREAK
-                        EXCEPT ValueError THEN
+                        EXCEPT deleet IS NOT INTEGER THEN
                             DISPLAY "Please enter only numbers!" 
                             CONTINUE
                     END WHILE

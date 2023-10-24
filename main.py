@@ -12,13 +12,16 @@ def init_inv():
                 init_supplier()
                 init_hospital()
                 data_list = assign_supplier()
+                print(data_list)
                 with open("ppe.txt","a") as f:
                     for i in range(len(item_code)):
                         quantity = input(f"Please enter quantity for {item_code[i]} (Leave empty for default (100)): ")
                         if not quantity:
                             quantity = 100
+                        else:
+                            quantity = quantity 
                         f.write(f"{item_code[i]},{quantity},{data_list[i]}\n")
-                        print("Inventory initiated")
+                    print("Inventory initiated")
                 menu(utype)
             else:
                 utype = login()
@@ -316,6 +319,7 @@ def search():
                     for line in lines:
                         data = line.strip().split(" | ")
                         data_list.append(data)
+                        current_quantity = data[4]
                 type_selection = int(input("Please select an option:\n1. Receive\n2. Distribute\n> "))
                 if len(lines) == 0:
                     print("No transaction found!")
@@ -326,43 +330,33 @@ def search():
                             #Find data that starts with receive
                             for data in data_list:
                                 #Check if data is start with Receive
-                                if data[0] == "Receive":
-                                    #Loop through all data in data_list
-                                    for data in data_list:
-                                        #Loop through data in data list and match data with selection
-                                        #Filter data with supplier code only
-                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "S":
-                                            #Find supplier index with
-                                            #Match the index of supplier
-                                            supplier_index = supplier_code[0].index(data[2])
-                                            #Sum data into quantity specific index of quantity > [100,0,0,0]
-                                            quantities[supplier_index] += int(data[4])
-                                    print(f"Item: {item_name[item_code_selection - 1]}")
-                                    for spcode,quantity in zip(supplier_code[1],quantities):
-                                        print(f"From {spcode} = {quantity}")
-                                    break
+                                #Loop through data in data list and match data with selection
+                                #Filter data with supplier code only
+                                if data[0] == "Receive" and data[1] == item_name[item_code_selection - 1] and data[2][0] == "S":
+                                    #Match the index of supplier
+                                    supplier_index = supplier_code[0].index(data[2])
+                                    #Sum data into quantity specific index of quantity > [100,0,0,0]
+                                    quantities[supplier_index] += int(current_quantity)
+                                print(f"Item: {item_name[item_code_selection - 1]}")
+                                for spcode,quantity in zip(supplier_code[1],quantities):
+                                    print(f"From {spcode} = {quantity}")
+                                break
                         #Search distributed item
                         case 2:
                             #Find data that starts with distribute
                             for data in data_list:
                                 #Check if data starts wtih Distribute
-                                if data[0] == "Distribute":
-                                    #Loop through all data in data_list
-                                    for data in data_list:
-                                        #Loop through data in data list and match data with selection
-                                        #Filter data with hospital code only
-                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "H":
-                                            #Find supplier index with
-                                            #Match the index of supplier
-                                            hospital_index = hospital_code[0].index(data[2])
-                                            #Sum data into quantity specific index of quantity > [100,0,0,0]
-                                            quantities[hospital_index] += int(data[4])
-                                    print(f"Item: {item_name[item_code_selection - 1]}")
-                                    for hpcode,quantity in zip(hospital_code[1],quantities):
-                                        print(f"To {hpcode} = {quantity}")
-                                    break
-                            else:
-                                print("No data found!")
+                                #Loop through data in data list and match data with selection
+                                #Filter data with hospital code only
+                                if data[0] == "Distribute" and data[1] == item_name[item_code_selection - 1] and data[2][0] == "H" :
+                                    #Match the index of supplier
+                                    hospital_index = hospital_code[0].index(data[2])
+                                    #Sum data into quantity specific index of quantity > [100,0,0,0]
+                                    quantities[hospital_index] += int(current_quantity)
+                                print(f"Item: {item_name[item_code_selection - 1]}")
+                                for hpcode,quantity in zip(hospital_code[1],quantities):
+                                    print(f"To {hpcode} = {quantity}")
+                                break
                         case _:
                             print("Invalid Selection")
             #Option 4
@@ -512,7 +506,7 @@ def menu(user_type):
             case 3:
                 search()
             case 4:
-                quit()
+                backup()
             case _:
                 print("Invalid selection! Please try again.")
 
@@ -537,17 +531,15 @@ def assign_supplier():
                             #List out app item name for selection
                             for c, ele in enumerate(spname, 1):
                                 print(f"{c}. {ele}")
+                            #Prompt user to select an item to make changes
+                            supplier_selection = input(f"Please select a supplier to supply {item_name[i]} > ")
                             try:
-                                #Prompt user to select an item to make changes
-                                supplier_selection = int(input(f"Please select a supplier to supply {item_name[i]} > "))
-                                #Check is selection is valid
-                                if 1 <= supplier_selection <= len(spname):
-                                    data_list.append(splist[supplier_selection - 1])
-                                    break
-                                else:
-                                    print("Invalid supplier number. Please enter a valid number.")
+                                supplier_selection = int(supplier_selection)
+                                break
                             except ValueError:
                                 print("Please enter a valid number.")
+                                continue
+                        data_list.append(splist[supplier_selection - 1])
         else:
             print("Suppliers assigned")
     return data_list

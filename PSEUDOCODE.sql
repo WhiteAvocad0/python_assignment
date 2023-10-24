@@ -45,7 +45,7 @@ FUNCTION inv_update()
         TRY
             IS menu_select INTEGER?
             BREAK
-        EXCEPT menu_select IS INTEGER THEN
+        EXCEPT menu_select IS NOT INTEGER THEN
             DISPLAY "Please enter only numbers!"
             CONTINUE
         END TRY
@@ -63,7 +63,7 @@ FUNCTION inv_update()
         APPEND line WITH STRIPPED AND REMOVE "," TO list_data
     END FOR
 
-    FOR c, ele IN ENUMERATE list_data AND START WITH 1
+    FOR c AND ele IN ENUMERATE list_data AND START WITH 1
         DISPLAY c, ". ", item name, " - ", quantity, " Boxes"
     END FOR
 
@@ -141,7 +141,7 @@ FUNCTION login()
             BREAK
         END IF
     END WHILE
-CALL FUNCTION init_inv()
+    CALL FUNCTION init_inv()
 END FUNCTION
 
 FUNCTION register()
@@ -196,7 +196,7 @@ FUNCTION inv_track()
         END IF
         TRY
             IS selection INTEGER?
-        EXCEPT selection IS INTEGER
+        EXCEPT selection IS NOT INTEGER
             DISPLAY "Please enter a number"
             CONTINUE
         END TRY
@@ -263,8 +263,7 @@ END FUNCTION
 FUNCTION delete_user(user_type)
     DEFINE data_list AS a list
     DEFINE selection AS INTEGER
-    OPEN "users.txt" IN READ mode AS f
-    READ all lines FROM f INTO lines
+    data_list = CALL FUNCTION readfiles("users.txt")
 
     FOR c AND ele IN ENUMERATE UID AND 1:
         DISPLAY c, ".", ele
@@ -279,7 +278,7 @@ FUNCTION delete_user(user_type)
         TRY
             selection IS INTEGER
             BREAK
-        EXCEPT selection IS INTEGER
+        EXCEPT selection IS NOT INTEGER
             DISPLAY "Please enter only a number!"
             CONTINUE
         END TRY
@@ -303,8 +302,7 @@ END FUNCTION
 FUNCTION search_user(fileName, mode)
     DEFINE data_list AS a list
     DEFINE selection AS INTEGER
-    OPEN "users.txt" IN READ mode AS f
-    READ all lines FROM f INTO lines
+    data_list = CALL FUNCTION readfiles("users.txt")
 
     FOR c AND ele IN ENUMERATE USERNAME AND 1:
         DISPLAY c, ".", ele
@@ -329,7 +327,7 @@ FUNCTION search_user(fileName, mode)
                 DISPLAY "Type:", data_list[3][selection-1]
             END IF
             BREAK
-        EXCEPT selection IS INTEGER
+        EXCEPT selection IS NOT INTEGER
             DISPLAY "Please enter only a number!"
             CONTINUE
         END TRY
@@ -338,60 +336,103 @@ FUNCTION search_user(fileName, mode)
     CALL FUNCTION search_user("users.txt", "r")
 END FUNCTION
 
-FUNCTION search():
+FUNCTION search()
+    item_list = CALL FUNCTION readfiles("ppe.txt")
+    DEFINE item_code, item_name AS LIST [], ["Face Shield", "Gloves", "Gown", "Head Cover", "Mask", "Shoe Covers"]
     DEFINE selection AS INTEGER
-
+    FOR item IN item_list
+        APPEND item[FIRST ITEM] TO item_code
+    
     WHILE TRUE THEN
-        DISPLAY "Please select a search option (Leave empty to quit):"
-        DISPLAY "1. Distribution list"
-        DISPLAY "2. Received list"
-        DISPLAY "3. All"
-        GET selection
+        selection = INPUT("\tPlease select a search option (Leave empty to quit):\n\t1. Distribution list\n\t2. Received list\n\t3. Specific Item\n\t4. All\n\t> ")
         IF selection IS EMPTY THEN
             RETURN
         END IF
         TRY
-            selection IS INTEGER
+            IS selection INTEGER?
             BREAK
-        EXCEPT ValueError THEN
-            DISPLAY "Please enter only a number!"
+        EXCEPT selection IS NOT INTEGER
+            PRINT "Please enter only numbers!"
             CONTINUE
         END TRY
-    END WHILE
 
-    MATCH selection THEN
-        CASE 1 THEN
-            DISPLAY "Type        Item  To  Date & Time\t\t    Quantity"
-            DISPLAY "-" * 60
-        CASE 2 THEN
-            DISPLAY "Type     Item From  Date & Time\t\t\t Quantity"
-            DISPLAY "-" * 60
-    END MATCH
+        OPEN "transactions.txt" IN READ mode AS f
+        READ all lines FROM f INTO lines
 
-    WITH OPEN "transactions.txt" IN READ mode AS f THEN
-        lines = f.readlines()
-        FOR EACH line IN lines THEN
-            data = line.strip()
-
-            MATCH selection THEN
+            MATCH selection
                 CASE 1 THEN
-                    IF data.startswith("Distribute"):
-                        DISPLAY data
-                        DISPLAY "-" * 60
+                    PRINT "Distribution list:"
+                    FOR EACH line IN lines
+                        data = line.STRIPPED
+                        IF data STARTSWITH "Distribute" THEN
+                            PRINT data
+                        END IF
+                    END FOR
                 CASE 2 THEN
-                    IF data.startswith("Receive"):
-                        DISPLAY data
-                        DISPLAY "-" * 60
+                    PRINT "Received list:"
+                    FOR EACH line IN lines
+                        data = line.STRIPPED
+                        IF data STARTSWITH "Receive" THEN
+                            PRINT data
+                        END IF
+                    END FOR
                 CASE 3 THEN
-                    DISPLAY data
-                CASE NOT 1 TO 3 THEN
-                    DISPLAY "Invalid selection! Please try again."
-            END MATCH
-        END FOR
-    END WITH
+                    data_list = []
+                    supplier_code = CALL FUNCTION readfiles("suppliers.txt")
+                    hospital_code = CALL FUNCTION readfiles("hospitals.txt")
+                    quantities = [0] * LENGTH OF supplier_code[0]
+                    item_code_selection = -1
 
-    CALL FUNCTION search()
+                    FOR c, ele IN ENUMERATE item_code AND START WITH 1
+                        PRINT f"{c}. {item_name[ele - 1]}"
+                    END FOR
+
+                    item_code_selection = CONVERT INPUT("Please select an item: ") TO INTEGER
+                    IF LENGTH OF lines EQUALS 0 THEN
+                        PRINT "No transaction found!"
+                    ELSE
+                        type_selection = CONVERT INPUT("Please select an option:\n1. Receive\n2. Distribute\n> ") TO INTEGER
+                        
+                        MATCH type_selection
+                            CASE 1 THEN
+                                FOR EACH data IN data_list
+                                    IF data[0] EQUALS "Receive" AND data[1] EQUALS item_name[item_code_selection - 1] AND data[2][0] EQUALS "S" THEN
+                                        supplier_index = INDEX OF data[2] IN supplier_code[0]
+                                        quantities[supplier_index] += CONVERT data[4] TO INTEGER
+                                    END IF
+                                END FOR
+                                PRINT f"Item: {item_name[item_code_selection - 1]}"
+                                FOR EACH spcode, quantity IN ZIP(supplier_code[1], quantities)
+                                    PRINT f"From {spcode} = {quantity}"
+                                END FOR
+                            CASE 2 THEN
+                                FOR EACH data IN data_list
+                                    IF data[0] EQUALS "Distribute" AND data[1] EQUALS item_name[item_code_selection - 1] AND data[2][0] EQUALS "H" THEN
+                                        hospital_index = INDEX OF data[2] IN hospital_code[0]
+                                        quantities[hospital_index] += CONVERT data[4] TO INTEGER
+                                    END IF
+                                END FOR
+                                PRINT f"Item: {item_name[item_code_selection - 1]}"
+                                FOR EACH hpcode, quantity IN ZIP(hospital_code[1], quantities)
+                                    PRINT f"To {hpcode} = {quantity}"
+                                END FOR
+                            CASE _:
+                                PRINT "No data found!"
+                        END MATCH
+                    END IF
+                CASE 4 THEN
+                    PRINT "All Transactions:"
+                    FOR EACH line IN lines
+                        data = line.STRIPPED
+                        PRINT data
+                    END FOR
+                CASE _:
+                    PRINT "Invalid selection! Please try again."
+            END MATCH
+        END WITH
+    END WHILE
 END FUNCTION
+
 
 FUNCTION modify_user()
     DEFINE data_list AS list

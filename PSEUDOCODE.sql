@@ -842,5 +842,18 @@ BEGIN
         QUIT()
     END FUNCTION    
 
+    FUNCTION readfiles()
+        DEFINE data_list AS list
+
+        OPEN file IN READ mode AS f
+        READ all line in file AS lines
+
+        FOR line IN lines THEN
+            APPEND line WITH SPACED STRIPPED AND REMOVED "," TO data_list
+        END FOR
+
+        RETURN data_list
+    END FUNCTION
+
     CALL FUNCTION init_inv()
 END

@@ -6,5 +6,5 @@ Receive | Gloves | S2 | 2023-10-27 17:22:26 | 100
 Distribute | Face Shield | H1 | 2023-10-27 17:26:21 | 100
 Receive | Gloves | S2 | 2023-10-27 17:26:21 | 200
 Distribute | Face Shield | H3 | 2023-10-27 17:26:21 | 10
-Receive | Face Shield | S1 | 2023-10-27 17:26:21 | 100
+Receive | Face Shield | S2 | 2023-10-27 17:26:21 | 100
 Distribute | Face Shield | H2 | 2023-10-27 17:26:21 | 30

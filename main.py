@@ -53,12 +53,16 @@ def inv_update():
         lines = f.readlines()
         hlines = hf.readlines()
         for line in hlines:
+            #Append hospital data into list
             hospital_list.append(line.strip().split(","))
         for line in lines:
+            #Append inventory data into list
             list_data.append(line.strip().split(","))
+        #List quantity of each item
         for c,ele in enumerate(list_data,1):
             print(f"{c}. {item_name[item_code.index(ele[0])]} - {ele[1]} Boxes")
         while True:
+            #Select item code
             selection = int(input("Please enter item code number (Leave empty to quit) > "))
             if not selection:
                 return
@@ -70,26 +74,32 @@ def inv_update():
             except ValueError:
                 print("Please enter only number!")
                 continue
+        #Enter new quantity
         quantity_to_change = int(input("Quantity to change > "))
         for c,ele in enumerate(list_data,1):
             item = item_name[item_code.index(ele[0])]
             itemcode = ele[0]
             current_quantity = int(ele[1])
             supplier = ele[2]
+            #Match item with selection
             if selection == c:
                 match menu_select:
                     case 1:
+                        #Sum up quantity
                         new_quantity = current_quantity + quantity_to_change
                         trans_line = (f"{select_data[menu_select-1]} | {item} | {supplier} | {current_time} | {quantity_to_change}\n")
                     case 2:
+                        #Check if sufficient for distribution
                         if current_quantity == 0 or quantity_to_change > current_quantity:
                             print("Insufficient for distribution")
                             inv_update()
                         else:
+                            #Delete quantity from entered quantity
                             new_quantity = current_quantity - quantity_to_change
                             for c,ele in enumerate(hospital_list[0],1):
                                 print(f"{c}.{ele}")
                             while True:
+                                #Select hospital
                                 to_hospital = input("Distribute to hospital > ")
                                 try:
                                     to_hospital = int(to_hospital)
@@ -97,6 +107,7 @@ def inv_update():
                                 except ValueError:
                                     print("Please enter only number!")
                                     continue
+                        #Data details to append into transactions.txt
                         trans_line = (f"{select_data[menu_select-1]} | {item} | {hospital_list[0][to_hospital-1]} | {current_time} | {quantity_to_change}\n") 
                     case _:
                         print("Invalid selection. Please try again.")
@@ -159,7 +170,9 @@ def inv_track():
     with open("ppe.txt","r") as f:
         lines = f.readlines()
         for c,line in enumerate(lines,1):
+            #Remove spaces and comma from data
             data = line.strip().split(",")
+            #Append spepcific data into list
             items_list.append(item_name[item_code.index(data[0].strip())])
             quantity_list.append(int(data[1].strip()))
     while True:
@@ -352,7 +365,7 @@ def search():
                                     for data in data_list:
                                         #Loop through data in data list and match data with selection
                                         #Filter data with supplier code only
-                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "S":
+                                        if data[1] == item_name[item_code_selection - 1] and data[2][0] == "S" and data[0] == "Receive":
                                             #Find supplier index with
                                             #Match the index of supplier
                                             supplier_index = supplier_code[0].index(data[2])
@@ -509,7 +522,7 @@ def menu(user_type):
                 case 9:
                     update_supplier()
                 case 0:
-                    backup()
+                    quit()
                 case _:
                     print("Invalid selection! Please try again.") 
     else:
@@ -531,7 +544,7 @@ def menu(user_type):
             case 3:
                 search()
             case 4:
-                backup()
+                quit()
             case _:
                 print("Invalid selection! Please try again.")
 
@@ -701,19 +714,6 @@ def config_save(fileName,mode,data_list):
     with open(fileName,mode) as f:
         for data in data_list:
             f.write(",".join(data) + "\n")
-
-#Backup when quit
-def backup():
-    data_list,files, = [],["ppe.txt","users.txt"]
-    for file in files:
-        with open(file,"r") as f:
-            lines = f.readlines()
-            for line in lines:
-                data_list.append(line.strip().split(","))
-        with open("backup.txt","w") as f:
-            for i in data_list:
-                f.write(",".join(i) + "\n")
-    quit()
 
 #Read files
 def readfiles(file):

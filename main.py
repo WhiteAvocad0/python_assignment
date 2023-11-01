@@ -31,7 +31,9 @@ def init_inv():
                 utype = login()
                 menu(utype)
     except FileNotFoundError:
-        print("The file was not found.")
+        with open("ppe.txt","w") as f, open("transactions.txt","w") as tf, open("hospitals.txt","w") as hf, open("suppliers.txt","w") as sf:
+            print("Creating file...")
+            init_inv()
 
 #Update inventory
 def inv_update():
